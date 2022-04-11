@@ -18,6 +18,7 @@ rootProject.allprojects {
     repositories {
         google()
         mavenCentral()
+        maven { url 'https://jitpack.io' }
     }
 }
 
@@ -41,10 +42,28 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 21
     }
 }
 
 dependencies {
+    def beacon_version = "3.1.0"
+
+    // REQUIRED, :core
+    implementation "com.github.airgap-it.beacon-android-sdk:core:$beacon_version"
+
+     // optional, :client-wallet
+    implementation "com.github.airgap-it.beacon-android-sdk:client-wallet:$beacon_version"
+    // optional, :client-wallet-compat
+    implementation "com.github.airgap-it.beacon-android-sdk:client-wallet-compat:$beacon_version"
+
+    // optional, :blockchain-substrate
+    implementation "com.github.airgap-it.beacon-android-sdk:blockchain-substrate:$beacon_version"
+    // optional, :blockchain-tezos
+    implementation "com.github.airgap-it.beacon-android-sdk:blockchain-tezos:$beacon_version"
+
+    // optional, :transport-p2p-matrix
+    implementation "com.github.airgap-it.beacon-android-sdk:transport-p2p-matrix:$beacon_version"
+
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
