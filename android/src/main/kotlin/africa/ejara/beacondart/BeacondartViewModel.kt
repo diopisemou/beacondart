@@ -160,6 +160,19 @@ class BeacondartViewModel : ViewModel() {
 
 
     companion object {
+
+        fun tezosAccount(publicKey: String, address: String, network: TezosNetwork): TezosAccount = TezosAccount(
+            publicKey,
+            address,
+            network,
+        )
+
+        fun substrateAccount(publicKey: String, address: String,network: SubstrateNetwork): SubstrateAccount = SubstrateAccount(
+            publicKey,
+            address,
+            network,
+        )
+
         fun exampleTezosAccount(network: TezosNetwork): TezosAccount = TezosAccount(
             "edpkvL3FNBYHdDohfVu6XdtHiRGxmzymR7bKo4J1dAeAs23V8PkkKu",
             "tz1ajkyd4hg6gExtVHBUAD269T9VpxfR74om",

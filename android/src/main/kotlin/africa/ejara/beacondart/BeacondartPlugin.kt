@@ -1,8 +1,6 @@
 package africa.ejara.beacondart
 
-
-// import kotlinx.android.synthetic.main.activity_main.*
-
+import africa.ejara.beacondart.BeacondartViewModel.Companion.tezosAccount
 import africa.ejara.beacondart.utils.toJson
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -25,6 +23,9 @@ import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry.Registrar
 import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
 import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosError
+import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
 import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.OperationTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
@@ -57,7 +58,6 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
   private val CHANNEL_EVENT: String = "beacondart_receiver"
   private lateinit var channel: MethodChannel
 
-  //kotlin("android.extensions")
   // private val viewModel by viewModels<BeacondartViewModel>()
   private lateinit var viewModel: BeacondartViewModel
   private lateinit var viewModelFactory: BeaconFactory
@@ -71,10 +71,6 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
 
   private val TAG: String = BeacondartPlugin::class.java.getSimpleName()
 
-  //  private val RC_BARCODE_CAPTURE = 9001
-//  var lineColor = ""
-//  var isShowFlashIcon = false
-//  var isContinuousScan = false
   private var beaconOperationStream: EventSink? = null
 
   private var eventChannel: EventChannel? = null
@@ -98,38 +94,16 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
     BeacondartPlugin.activity = activity
   }
 
-  /**
-   * Plugin registration.
-   */
-//  fun registerWith(registrar: Registrar) {
-//    if (registrar.activity() == null) {
-//      return
-//    }
-//    val activity: Activity = registrar.activity()
-//    var applicationContext: Application? = null
-//    if (registrar.context() != null) {
-//      applicationContext = registrar.context().applicationContext as Application
-//    }
-//    val instance = BeacondartPlugin(registrar.activity() as FlutterActivity, registrar)
-//    instance.run {
-//      if (applicationContext != null) {
-//        createPluginSetup(registrar.messenger(), applicationContext, activity, registrar, null)
-//      }
-//    }
-//  }
+  
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, CHANNEL)
     channel.setMethodCallHandler(this)
     viewModelFactory = BeaconFactory()
-    viewModel = ViewModelProvider(this, viewModelFactory)
-      .get(BeacondartViewModel::class.java)
-    // viewModel = ViewModelProvider(this).get(BeacondartViewModel::class.java)
+    viewModel = ViewModelProvider(this, viewModelFactory).get(BeacondartViewModel::class.java)
     pluginBinding = flutterPluginBinding
 
-//    viewModel.viewModelScope.launch {
-//      subscribeToRequests()
-//    }
+
 
     if (applicationContext != null && pluginBinding != null) {
       createPluginSetup(
@@ -156,6 +130,11 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
         try {
           viewModel.onInit()
           result.success("beacon Created ${viewModel.beaconClient}")
+//          BeacondartViewModel.tezosAccount(
+//            "edpkvL3FNBYHdDohfVu6XdtHiRGxmzymR7bKo4J1dAeAs23V8PkkKu",
+//            "tz1ajkyd4hg6gExtVHBUAD269T9VpxfR74om",
+//            null,
+//          )
         } catch (e: Exception) {
           result.error("exception", e.message, e.stackTrace)
           // onError(e)
@@ -406,13 +385,6 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
     }
   }
 
-  // suspend fun connectToDApp() {
-  //     try {
-  //       viewModel.addPeers(dApp)
-  //     } catch (e: Exception) {
-  //         onError(e)
-  //     }
-  // }
 
   private fun onError(exception: Throwable) {
     exception.printStackTrace()
@@ -497,28 +469,8 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
    */
 
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
-    // super.onActivityResult(requestCode, resultCode, data)
-//    if (requestCode == RC_BARCODE_CAPTURE) {
-//      if (resultCode == CommonStatusCodes.SUCCESS) {
-//        if (data != null) {
-//          try {
-//            val barcode: Barcode = data.getParcelableExtra(BarcodeCaptureActivity.BarcodeObject)
-//            val barcodeResult: String = barcode.rawValue
-//            pendingResult!!.success(barcodeResult)
-//          } catch (e: Exception) {
-//            pendingResult!!.success("-1")
-//          }
-//        } else {
-//          pendingResult!!.success("-1")
-//        }
-//        pendingResult = null
-//        arguments = null
-//        return true
-//      } else {
-//        pendingResult!!.success("-1")
-//      }
-//    }
-    return false
+    
+    return true
   }
 
 
