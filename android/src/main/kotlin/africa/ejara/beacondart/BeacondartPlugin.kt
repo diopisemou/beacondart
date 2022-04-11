@@ -1,6 +1,5 @@
 package africa.ejara.beacondart
 
-import africa.ejara.beacondart.BeacondartViewModel.Companion.tezosAccount
 import africa.ejara.beacondart.utils.toJson
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -23,9 +22,8 @@ import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry.Registrar
 import it.airgap.beaconsdk.blockchain.substrate.message.request.PermissionSubstrateRequest
 import it.airgap.beaconsdk.blockchain.substrate.message.response.PermissionSubstrateResponse
-import it.airgap.beaconsdk.blockchain.tezos.data.TezosAccount
 import it.airgap.beaconsdk.blockchain.tezos.data.TezosError
-import it.airgap.beaconsdk.blockchain.tezos.data.TezosNetwork
+import it.airgap.beaconsdk.blockchain.tezos.extension.from
 import it.airgap.beaconsdk.blockchain.tezos.message.request.BroadcastTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.OperationTezosRequest
 import it.airgap.beaconsdk.blockchain.tezos.message.request.PermissionTezosRequest
@@ -39,32 +37,35 @@ import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.internal.utils.logInfo
 import it.airgap.beaconsdk.core.message.BeaconRequest
 import it.airgap.beaconsdk.core.message.ErrorBeaconResponse
+import kotlin.reflect.KMutableProperty
 import kotlinx.coroutines.launch
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlin.reflect.KMutableProperty
-
 
 /** BeacondartPlugin */
 // @OptIn(ExperimentalSerializationApi::class)
-class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListener,
-  EventChannel.StreamHandler, FlutterPlugin, ActivityAware, ViewModelStore(), LifecycleOwner {
+class BeacondartPlugin :
+    MethodCallHandler,
+    PluginRegistry.ActivityResultListener,
+    EventChannel.StreamHandler,
+    FlutterPlugin,
+    ActivityAware,
+    ViewModelStore(),
+    LifecycleOwner {
   /// The MethodChannel that will the communication between Flutter and native Android
   ///
   /// This local reference serves to register the plugin with the Flutter Engine and unregister it
   /// when the Flutter Engine is detached from the Activity
   private val CHANNEL: String = "beacondart"
   private val CHANNEL_EVENT: String = "beacondart_receiver"
+  // private val CHANNEL_REQ_EVENT: String = "beacondart_request_receiver"
+  // private val CHANNEL_RESP_EVENT: String = "beacondart_response_receiver"
   private lateinit var channel: MethodChannel
 
   // private val viewModel by viewModels<BeacondartViewModel>()
   private lateinit var viewModel: BeacondartViewModel
   private lateinit var viewModelFactory: BeaconFactory
-  private val json: Json by lazy {
-    Json { prettyPrint = true }
-  }
-
+  private val json: Json by lazy { Json { prettyPrint = true } }
 
   private var pendingResult: Result? = null
   private var arguments: Map<String, Any>? = null
@@ -74,6 +75,8 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
   private var beaconOperationStream: EventSink? = null
 
   private var eventChannel: EventChannel? = null
+  // private var eventReqChannel: EventChannel? = null
+  // private var eventRespChannel: EventChannel? = null
 
   /**
    * V2 embedding
@@ -94,8 +97,6 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
     BeacondartPlugin.activity = activity
   }
 
-  
-
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, CHANNEL)
     channel.setMethodCallHandler(this)
@@ -103,19 +104,21 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
     viewModel = ViewModelProvider(this, viewModelFactory).get(BeacondartViewModel::class.java)
     pluginBinding = flutterPluginBinding
 
-
-
     if (applicationContext != null && pluginBinding != null) {
       createPluginSetup(
-        pluginBinding!!.binaryMessenger,
-        pluginBinding!!.applicationContext as Application,
-        activityBinding!!.getActivity(),
-        null,
-        activityBinding!!
+          pluginBinding!!.binaryMessenger,
+          pluginBinding!!.applicationContext as Application,
+          activityBinding!!.getActivity(),
+          null,
+          activityBinding!!
       )
     } else {
       eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, CHANNEL_EVENT)
       eventChannel!!.setStreamHandler(this)
+//      eventReqChannel = EventChannel(flutterPluginBinding.binaryMessenger, CHANNEL_REQ_EVENT)
+//      eventRespChannel = EventChannel(flutterPluginBinding.binaryMessenger, CHANNEL_RESP_EVENT)
+//      eventReqChannel!!.setStreamHandler(this)
+//      eventRespChannel!!.setStreamHandler(this)
     }
   }
 
@@ -128,13 +131,13 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
       }
       "onInit" -> {
         try {
-          viewModel.onInit().runCatching { }
+          viewModel.onInit().runCatching {}
           result.success("beacon Created ${viewModel.beaconClient}")
-//          BeacondartViewModel.tezosAccount(
-//            "edpkvL3FNBYHdDohfVu6XdtHiRGxmzymR7bKo4J1dAeAs23V8PkkKu",
-//            "tz1ajkyd4hg6gExtVHBUAD269T9VpxfR74om",
-//            null,
-//          )
+          //          BeacondartViewModel.tezosAccount(
+          //            "edpkvL3FNBYHdDohfVu6XdtHiRGxmzymR7bKo4J1dAeAs23V8PkkKu",
+          //            "tz1ajkyd4hg6gExtVHBUAD269T9VpxfR74om",
+          //            null,
+          //          )
         } catch (e: Exception) {
           result.error("exception", e.message, e.stackTrace)
           // onError(e)
@@ -150,15 +153,16 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
           val relayServer: String? = call.argument("relayServer")
           val version: String? = call.argument("version")
 
-          if (id != null && name != null && publicKey != null && relayServer != null && version != null) {
+          if (id != null &&
+                  name != null &&
+                  publicKey != null &&
+                  relayServer != null &&
+                  version != null
+          ) {
             viewModel.addPeer(id, name, publicKey, relayServer, version)
             result.success("Peer Successfully added ${android.os.Build.VERSION.RELEASE}")
           } else {
-            result.error(
-              "error",
-              "Please set id, name, publicKey, relayServer and version",
-              null
-            )
+            result.error("error", "Please set id, name, publicKey, relayServer and version", null)
             return
           }
         } catch (e: Exception) {
@@ -177,7 +181,6 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
             return
           }
           result.success("peer removed $id")
-
         } catch (e: Exception) {
           result.error("exception", e.message, e.stackTrace)
           // onError(e)
@@ -196,14 +199,34 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
         try {
           viewModel.onInit()
           viewModel.beginBeacon().observe(this) { result ->
-            result.getOrNull()?.let { onBeaconRequest(it) }
+            result.getOrNull()?.let { onBeaconRequest(it)  }
             result.exceptionOrNull()?.let { onError(it) }
           }
         } catch (e: Exception) {
           // result.error("exception", e.message, e.stackTrace)
           onError(e)
         }
+      }
+      "onConfirmConnectToDApp" -> {
+        try {
+          viewModel.beginBeacon().observe(this) { result ->
+            result.getOrNull()?.let { onAcceptBeaconRequest(it) /*onBeaconRequest(it)*/ }
+            result.exceptionOrNull()?.let { onError(it) }
+          }
+        } catch (e: Exception) {
 
+          onError(e)
+        }
+      }"onRejectConnectToDApp" -> {
+        try {
+          viewModel.beginBeacon().observe(this) { result ->
+            result.getOrNull()?.let { onRejectBeaconRequest(it) }
+            result.exceptionOrNull()?.let { onError(it) }
+          }
+        } catch (e: Exception) {
+
+          onError(e)
+        }
       }
       "onSubscribeToRequest" -> {
         try {
@@ -223,8 +246,7 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
               result.exceptionOrNull()?.let { onError(it) }
             }
 
-            if (viewModel.beaconClient == null)
-            {
+            if (viewModel.beaconClient == null) {
               result.error("Error subscription", "beacon client is null", null)
             }
           }
@@ -232,18 +254,15 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
           // result.error("exception", e.message, e.stackTrace)
           onError(e)
         }
-
       }
       else -> result.notImplemented()
     }
-
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPluginBinding) {
     channel.setMethodCallHandler(null)
     pluginBinding = null
   }
-
 
   override fun onDetachedFromActivityForConfigChanges() {
     onDetachedFromActivity()
@@ -254,8 +273,7 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
   }
 
   /**
-   * Setup method
-   * Created after Embedding V2 API release
+   * Setup method Created after Embedding V2 API release
    *
    * @param messenger
    * @param applicationContext
@@ -264,11 +282,11 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
    * @param activityBinding
    */
   private fun createPluginSetup(
-    messenger: BinaryMessenger,
-    applicationContext: Application,
-    activity: Activity,
-    registrar: Registrar?,
-    activityBinding: ActivityPluginBinding?
+      messenger: BinaryMessenger,
+      applicationContext: Application,
+      activity: Activity,
+      registrar: Registrar?,
+      activityBinding: ActivityPluginBinding?
   ) {
 
     if (activity is KMutableProperty<*>) {
@@ -278,6 +296,10 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
     // activity = activity as FlutterActivity
     eventChannel = EventChannel(messenger, CHANNEL_EVENT)
     eventChannel!!.setStreamHandler(this)
+    //eventReqChannel = EventChannel(messenger, CHANNEL_REQ_EVENT)
+    //eventRespChannel = EventChannel(messenger, CHANNEL_RESP_EVENT)
+    //eventReqChannel!!.setStreamHandler(this)
+    //eventRespChannel!!.setStreamHandler(this)
     this.applicationContext = applicationContext
     channel = MethodChannel(messenger, CHANNEL)
     channel.setMethodCallHandler(this)
@@ -285,9 +307,7 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
       // V1 embedding setup for activity listeners.
       observer = LifeCycleObserver(activity)
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-        applicationContext.registerActivityLifecycleCallbacks(
-          observer
-        )
+        applicationContext.registerActivityLifecycleCallbacks(observer)
       } // Use getApplicationContext() to avoid casting failures.
       registrar.addActivityResultListener(this)
     } else {
@@ -302,11 +322,11 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
     activityBinding = binding
     createPluginSetup(
-      pluginBinding!!.binaryMessenger,
-      pluginBinding!!.applicationContext as Application,
-      activityBinding!!.getActivity(),
-      null,
-      activityBinding!!
+        pluginBinding!!.binaryMessenger,
+        pluginBinding!!.applicationContext as Application,
+        activityBinding!!.getActivity(),
+        null,
+        activityBinding!!
     )
   }
 
@@ -314,9 +334,7 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
     clearPluginSetup()
   }
 
-  /**
-   * Clear plugin setup
-   */
+  /** Clear plugin setup */
   private fun clearPluginSetup() {
     activity = null
     activityBinding!!.removeActivityResultListener(this)
@@ -325,6 +343,8 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
     lifecycle = null
     channel.setMethodCallHandler(null)
     eventChannel!!.setStreamHandler(null)
+    //eventReqChannel!!.setStreamHandler(null)
+    //eventRespChannel!!.setStreamHandler(null)
     channel = MethodChannel(null, "")
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
       applicationContext!!.unregisterActivityLifecycleCallbacks(observer)
@@ -339,28 +359,42 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
   private fun onBeaconRequest(request: BeaconRequest) {
     val jsonReq = json.encodeToString(request.toJson(json))
 
-    val response = when (request) {
-      is PermissionSubstrateRequest -> PermissionSubstrateResponse.from(
-        request,
-        request.networks.map { BeacondartViewModel.exampleSubstrateAccount(it) })
-      is PermissionTezosRequest -> PermissionTezosResponse.from(
-        request,
-        BeacondartViewModel.exampleTezosAccount(request.network)
-      )
-      is OperationTezosRequest -> OperationTezosResponse.from(request, "")
-      is SignPayloadTezosRequest -> SignPayloadTezosResponse.from(
-        request,
-        SigningType.Raw,
-        ""
-      )
-      is BroadcastTezosRequest -> BroadcastTezosResponse.from(request, "")
-      else -> ErrorBeaconResponse.from(request, BeaconError.Aborted)
-    }
-
     logInfo("beaconRequest", jsonReq)
-    logInfo("beaconReponse", response.toJson().toString())
 
-    //this.lifecycleScope.launch {
+    // this.lifecycleScope.launch {
+    viewModel.viewModelScope.launch {
+      try {
+
+        beaconOperationStream?.success(jsonReq)
+      } catch (e: Exception) {
+        // pendingResult?.error("error ", "Stream error", e)
+        onError(e)
+      }
+    }
+  }
+
+  private fun onAcceptBeaconRequest(request: BeaconRequest) {
+    val jsonReq = json.encodeToString(request.toJson(json))
+
+    val response =
+        when (request) {
+          is PermissionSubstrateRequest ->
+              PermissionSubstrateResponse.from(
+                  request,
+                  request.networks.map { BeacondartViewModel.exampleSubstrateAccount(it) }
+              )
+          is PermissionTezosRequest ->
+              PermissionTezosResponse.from( request, BeacondartViewModel.exampleTezosAccount(request.network))
+          is OperationTezosRequest -> OperationTezosResponse.from(request, "")
+          is SignPayloadTezosRequest -> SignPayloadTezosResponse.from(request, SigningType.Raw, "")
+          is BroadcastTezosRequest -> BroadcastTezosResponse.from(request, "")
+          else -> ErrorBeaconResponse.from(request, BeaconError.Aborted)
+        }
+
+    logInfo("beaconAccepptRequest", jsonReq)
+    logInfo("beaconAcceptReponse", response.toJson().toString())
+
+    // this.lifecycleScope.launch {
     viewModel.viewModelScope.launch {
       try {
         // activity!!.runOnUiThread { beaconOperationStream!!.success(response) }
@@ -368,7 +402,37 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
         viewModel.beaconClient?.respond(response)
         // pendingResult?.success(response)
         beaconOperationStream?.success(json.encodeToString(response.toJson(json)))
+      } catch (e: Exception) {
+        // pendingResult?.error("error ", "Stream error", e)
+        onError(e)
+      }
+    }
+  }
 
+  private fun onRejectBeaconRequest(request: BeaconRequest) {
+    val jsonReq = json.encodeToString(request.toJson(json))
+
+    val response =
+        when (request) {
+          is PermissionSubstrateRequest -> ErrorBeaconResponse.from(request, BeaconError.Aborted)
+          is PermissionTezosRequest -> ErrorBeaconResponse.from(request, BeaconError.Aborted)
+          is OperationTezosRequest -> ErrorBeaconResponse.from(request, TezosError.TransactionInvalid)
+          is SignPayloadTezosRequest -> ErrorBeaconResponse.from(request, TezosError.SignatureTypeNotSupported)
+          is BroadcastTezosRequest -> ErrorBeaconResponse.from(request, TezosError.BroadcastError)
+          else -> ErrorBeaconResponse.from(request, BeaconError.Aborted)
+        }
+
+    logInfo("beaconRejectRequest", jsonReq)
+    logInfo("beaconRejectReponse", response.toJson().toString())
+
+    // this.lifecycleScope.launch {
+    viewModel.viewModelScope.launch {
+      try {
+        // activity!!.runOnUiThread { beaconOperationStream!!.success(response) }
+
+        viewModel.beaconClient?.respond(response)
+        // pendingResult?.success(response)
+        beaconOperationStream?.error("Error ", "", json.encodeToString(response.toJson(json)))
       } catch (e: Exception) {
         // pendingResult?.error("error ", "Stream error", e)
         onError(e)
@@ -385,41 +449,36 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
     }
   }
 
-
   private fun onError(exception: Throwable) {
     exception.printStackTrace()
     // pendingResult?.error("error", exception.message, null)
   }
 
   data class State(
-    val hasPeers: Boolean = false,
-    val hasAwaitingRequest: Boolean = false,
+      val hasPeers: Boolean = false,
+      val hasAwaitingRequest: Boolean = false,
   )
 
   data class PeerInput(
-    val id: String,
-    val name: String,
-    val publicKey: String,
-    val relayServer: String,
-    val version: String
+      val id: String,
+      val name: String,
+      val publicKey: String,
+      val relayServer: String,
+      val version: String
   )
 
   companion object {
     private var activity: FlutterActivity? = null
   }
 
+  //  override fun getViewModelStore(): ViewModelStore {
+  //    return this.viewModelStore
+  //  }
 
-//  override fun getViewModelStore(): ViewModelStore {
-//    return this.viewModelStore
-//  }
-
-  /**
-   * Activity lifecycle observer
-   */
+  /** Activity lifecycle observer */
   @SuppressLint("NewApi")
   private class LifeCycleObserver(activity: Activity) :
-    Application.ActivityLifecycleCallbacks,
-    DefaultLifecycleObserver {
+      Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver {
     private val thisActivity: Activity = activity
     override fun onCreate(owner: LifecycleOwner) {}
     override fun onStart(owner: LifecycleOwner) {}
@@ -448,15 +507,10 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
     override fun onActivityDestroyed(p0: Activity) {
       if (thisActivity === p0 && p0.getApplicationContext() != null) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-          (p0.getApplicationContext() as Application)
-            .unregisterActivityLifecycleCallbacks(
-              this
-            )
+          (p0.getApplicationContext() as Application).unregisterActivityLifecycleCallbacks(this)
         }
       }
     }
-
-
   }
 
   /**
@@ -467,30 +521,24 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
    * @param data
    * @return
    */
-
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
-    
+
     return true
   }
-
 
   override fun onListen(o: Any?, eventSink: EventSink) {
     try {
       beaconOperationStream = eventSink
-    } catch (e: Exception) {
-    }
+    } catch (e: Exception) {}
   }
 
   override fun onCancel(o: Any?) {
     try {
       beaconOperationStream = null
-    } catch (e: Exception) {
-    }
+    } catch (e: Exception) {}
   }
 
   override fun getLifecycle(): Lifecycle {
     return this.lifecycle!!
   }
-
-
 }

@@ -50,7 +50,9 @@ class _MyAppState extends State<MyApp> {
     Beacondart.getOperationStreamReceiver()?.listen((barcode) {
       /// data to be used in the dapp
 
-      debugPrint(barcode);
+      var requestMap = json.decode(barcode);
+      debugPrint('barcode: ${barcode.runtimeType}');
+      debugPrint("barcode-type: ${barcode['type']}");
     });
   }
 
@@ -113,11 +115,16 @@ class _MyAppState extends State<MyApp> {
                     });
                   }
                 },
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 15.0),
-                  child: Icon(
-                    Icons.camera_alt,
-                    size: 50,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                  child: Row(
+                    children: const [
+                      Text("Scan Qr Code"),
+                      Icon(
+                        Icons.camera_alt,
+                        size: 50,
+                      ),
+                    ],
                   ),
                 ),
               ),
