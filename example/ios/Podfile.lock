@@ -1,0 +1,22 @@
+PODS:
+  - beacondart (0.0.1):
+    - Flutter
+  - Flutter (1.0.0)
+
+DEPENDENCIES:
+  - beacondart (from `.symlinks/plugins/beacondart/ios`)
+  - Flutter (from `Flutter`)
+
+EXTERNAL SOURCES:
+  beacondart:
+    :path: ".symlinks/plugins/beacondart/ios"
+  Flutter:
+    :path: Flutter
+
+SPEC CHECKSUMS:
+  beacondart: 15ef76ec1ec5235d9a620704150a1ccbde740a97
+  Flutter: 50d75fe2f02b26cc09d224853bb45737f8b3214a
+
+PODFILE CHECKSUM: 4e8f8b2be68aeea4c0d5beb6ff1e79fface1d048
+
+COCOAPODS: 1.11.2
