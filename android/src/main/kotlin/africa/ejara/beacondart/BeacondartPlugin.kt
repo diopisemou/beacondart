@@ -128,7 +128,7 @@ class BeacondartPlugin : MethodCallHandler, PluginRegistry.ActivityResultListene
       }
       "onInit" -> {
         try {
-          viewModel.onInit()
+          viewModel.onInit().runCatching { }
           result.success("beacon Created ${viewModel.beaconClient}")
 //          BeacondartViewModel.tezosAccount(
 //            "edpkvL3FNBYHdDohfVu6XdtHiRGxmzymR7bKo4J1dAeAs23V8PkkKu",
