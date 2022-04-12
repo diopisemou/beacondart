@@ -19,6 +19,7 @@ import it.airgap.beaconsdk.blockchain.tezos.tezos
 import it.airgap.beaconsdk.client.wallet.BeaconWalletClient
 import it.airgap.beaconsdk.core.data.BeaconError
 import it.airgap.beaconsdk.core.data.P2pPeer
+import it.airgap.beaconsdk.core.data.Peer
 import it.airgap.beaconsdk.core.message.BeaconMessage
 import it.airgap.beaconsdk.core.message.BeaconRequest
 import it.airgap.beaconsdk.core.message.ErrorBeaconResponse
@@ -111,6 +112,15 @@ class BeacondartViewModel : ViewModel() {
             beaconClient?.addPeers(peer)
             checkForPeers()
         }
+    }
+
+    fun getPeers() : List<Peer> ? {
+        var listPeers : List<Peer>? = null
+        viewModelScope.launch {
+            listPeers = beaconClient?.getPeers()!!
+
+        }
+        return listPeers;
     }
 
     fun removePeers() {

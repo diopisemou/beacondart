@@ -1,23 +1,28 @@
-import 'dart:html';
-
-import 'package:flutter/material.dart';
-import 'dart:async';
-import 'package:flutter/services.dart';
 import 'package:beacondart/beacondart.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:flutter/material.dart';
 
-class Permission extends StatefulWidget {
+class PermissionPage extends StatefulWidget {
   final String dappImageUrl;
   final String dappName;
   final String dappAddress;
-  const Permission({Key? key, required this.dappImageUrl, required this.dappName, required this.dappAddress})
+  final String dappScope;
+  final String dappBlockChain;
+  final String dappNetwork;
+  const PermissionPage(
+      {Key? key,
+      required this.dappImageUrl,
+      required this.dappName,
+      required this.dappAddress,
+      required this.dappScope,
+      required this.dappBlockChain,
+      required this.dappNetwork})
       : super(key: key);
 
   @override
-  State<Permission> createState() => _PermissionState();
+  State<PermissionPage> createState() => _PermissionPageState();
 }
 
-class _PermissionState extends State<Permission> {
+class _PermissionPageState extends State<PermissionPage> {
   bool isInvalidDappError = false;
 
   @override
@@ -36,16 +41,43 @@ class _PermissionState extends State<Permission> {
           child: Column(
             children: [
               const SizedBox(height: 20),
-              Image(image: NetworkImage(widget.dappImageUrl)),
+              Text('Dapp Blockchain : ${widget.dappBlockChain} \n'),
+              const SizedBox(height: 20),
+
+              Text('Dapp Network : ${widget.dappNetwork} \n'),
+              const SizedBox(height: 20),
+
+              const SizedBox(height: 20),
+              // Image(image: NetworkImage(widget.dappImageUrl)),
               const SizedBox(height: 20),
               Text('Dapp Name on: ${widget.dappName} \n'),
               const SizedBox(height: 20),
               Text('Public address : ${widget.dappAddress} \n'),
               const SizedBox(height: 20),
+              Text('Dapp Scope : ${widget.dappScope} \n'),
+              const SizedBox(height: 20),
 
               ///Scan Icon
               GestureDetector(
-                  onTap: () async {},
+                  onTap: () async {
+                    Beacondart.onRejectConnectToDApp();
+                    Navigator.of(context).pop();
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                    child: Row(children: const [
+                      Text("Cancel"),
+                      Icon(
+                        Icons.check,
+                        size: 50,
+                      ),
+                    ]),
+                  )),
+
+              GestureDetector(
+                  onTap: () async {
+                    Beacondart.onConfirmConnectToDApp();
+                  },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 15.0),
                     child: Row(children: const [

@@ -8,15 +8,16 @@ import 'package:dart_bs58check/dart_bs58check.dart';
 class Beacondart {
   static const MethodChannel _channel = MethodChannel('beacondart');
 
-  static const EventChannel _eventChannel = EventChannel('beacondart_request_receiver');
-  //static const EventChannel _eventReqChannel = EventChannel('beacondart_request_receiver');
-  //static const EventChannel _eventRespChannel = EventChannel('beacondart_response_receiver');
+  static const EventChannel _eventChannel = EventChannel('beacondart_receiver');
 
   static Stream? _onOperationReceiver;
-  //static Stream? _onOperationRequestReceiver;
-  //static Stream? _onOperationResponseReceiver;
 
   static bool? isInvalidDappError;
+
+  static List<P2pPeer> peers = [];
+  static String? _getDappAddress;
+  static String? _getDappImageUrl;
+  static String? _getDappName;
 
   static Future<String?> get platformVersion async {
     final String? version = await _channel.invokeMethod('getPlatformVersion');
@@ -62,10 +63,16 @@ class Beacondart {
           var relayServer = dappJson['relayServer'];
           var version = dappJson['version'];
           var type = dappJson['type'];
+          _getDappName = name;
+          _getDappAddress = publicKey;
+          _getDappImageUrl = relayServer;
           addPeer(id: id, name: name, publicKey: publicKey, relayServer: relayServer, version: version);
           Future.delayed(Duration(milliseconds: 500), () {
             onConnectToDApp();
           });
+          // Future.delayed(Duration(milliseconds: 500), () {
+          //   onConnectToDApp();
+          // });
         }
       }
     } on PlatformException {
@@ -87,8 +94,37 @@ class Beacondart {
       'version': version ?? '',
     };
     dynamic? result = await _channel.invokeMethod('addPeer', params);
+    peers.add(P2pPeer(
+        id: id,
+        name: name,
+        publicKey: publicKey ?? '',
+        relayServer: relayServer ?? '',
+        version: version ?? '',
+        icon: '',
+        appUrl: ''));
     _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
     return true;
+  }
+
+  static Future<List<P2pPeer>> getPeers() async {
+    dynamic? result = await _channel.invokeMethod('getPeers');
+    _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
+    return result;
+  }
+
+  static Future<List<P2pPeer>> removePeer(String? id) async {
+    Map params = <String, String>{
+      'id': id ?? '',
+    };
+    dynamic? result = await _channel.invokeMethod('removePeer', params);
+    _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
+    return result;
+  }
+
+  static Future<List<P2pPeer>> removePeers() async {
+    dynamic? result = await _channel.invokeMethod('removePeers');
+    _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
+    return result;
   }
 
   static Future<bool?> onConfirmConnectToDApp() async {
@@ -160,37 +196,110 @@ class Beacondart {
     return _onOperationReceiver;
   }
 
-  /// Returns a continuous stream of barcode scans until the user cancels the
-  /// operation.
-  ///
-  /// Shows a scan line with [lineColor] over a scan window. A flash icon is
-  /// displayed if [isShowFlashIcon] is true. The text of the cancel button can
-  /// be customized with the [cancelButtonText] string. Returns a stream of
-  /// detected barcode strings.
-  static Stream? getOperationRequestStreamReceiver() {
-    // Pass params to the plugin
-
-    // Invoke method to open camera, and then create an event channel which will
-    // return a stream
-    // _channel.invokeMethod('scanBarcode', params);
-    _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
-    return _onOperationReceiver;
+  static String? getDappAddress() {
+    return _getDappAddress;
   }
 
-  /// Returns a continuous stream of barcode scans until the user cancels the
-  /// operation.
-  ///
-  /// Shows a scan line with [lineColor] over a scan window. A flash icon is
-  /// displayed if [isShowFlashIcon] is true. The text of the cancel button can
-  /// be customized with the [cancelButtonText] string. Returns a stream of
-  /// detected barcode strings.
-  static Stream? getOperationResponseStreamReceiver() {
-    // Pass params to the plugin
-
-    // Invoke method to open camera, and then create an event channel which will
-    // return a stream
-    // _channel.invokeMethod('scanBarcode', params);
-    _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
-    return _onOperationReceiver;
+  static String? getDappName() {
+    return _getDappName;
   }
+
+  static String? getDappImageUrl() {
+    return _getDappImageUrl;
+  }
+}
+
+class P2pPeer extends Peer {
+  String? id = null;
+  String? name = null;
+  String publicKey;
+  String relayServer;
+  String version = "1";
+  String? icon = null;
+  String? appUrl = null;
+  bool isPaired = false;
+  bool isRemoved = false;
+
+  P2pPeer(
+      {required this.id,
+      required this.name,
+      required this.publicKey,
+      required this.relayServer,
+      required this.version,
+      required this.icon,
+      required this.appUrl,
+      this.isPaired = false,
+      this.isRemoved = false});
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'publicKey': publicKey,
+      'relayServer': relayServer,
+      'version': version,
+      'icon': icon,
+      'appUrl': appUrl,
+      'isPaired': isPaired,
+      'isRemoved': isRemoved,
+    };
+  }
+
+  factory P2pPeer.fromMap(Map<String, dynamic> map) {
+    return P2pPeer(
+        id: map['id'],
+        name: map['name'],
+        publicKey: map['publicKey'],
+        relayServer: map['relayServer'],
+        version: map['version'],
+        icon: map['icon'],
+        appUrl: map['appUrl'],
+        isPaired: map['isPaired'],
+        isRemoved: map['isRemoved']);
+  }
+
+  String toJson() => json.encode(toMap());
+
+  factory P2pPeer.fromJson(String source) => P2pPeer.fromMap(json.decode(source));
+
+  @override
+  Peer paired() {
+    return P2pPeer(
+      id: id,
+      name: name,
+      publicKey: publicKey,
+      relayServer: relayServer,
+      version: version,
+      icon: icon,
+      appUrl: appUrl,
+      isPaired: true,
+    );
+  }
+
+  @override
+  Peer removed() {
+    return P2pPeer(
+      id: id,
+      name: name,
+      publicKey: publicKey,
+      relayServer: relayServer,
+      version: version,
+      icon: icon,
+      appUrl: appUrl,
+      isRemoved: true,
+    );
+  }
+}
+
+abstract class Peer {
+  String? id;
+  String? name;
+  String publicKey = '';
+  String version = '';
+
+  bool isPaired = false;
+  bool isRemoved = false;
+
+  Peer paired();
+  Peer removed();
 }

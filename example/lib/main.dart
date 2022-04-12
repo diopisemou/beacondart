@@ -1,13 +1,33 @@
 import 'dart:convert';
+import 'package:beacondart_example/permission.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:beacondart/beacondart.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
-import 'package:dart_bs58check/dart_bs58check.dart';
+//import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+//import 'package:dart_bs58check/dart_bs58check.dart';
 
 void main() {
-  runApp(const MyApp());
+  runZonedGuarded(() async {
+    runApp(MaterialApp(
+        title: 'Example App',
+        theme: ThemeData(
+          // This is the theme of your application.
+          //
+          // Try running your application with "flutter run". You'll see the
+          // application has a blue toolbar. Then, without quitting the app, try
+          // changing the primarySwatch below to Colors.green and then invoke
+          // "hot reload" (press "r" in the console where you ran "flutter run",
+          // or simply save your changes to "hot reload" in a Flutter IDE).
+          // Notice that the counter didn't reset back to zero; the application
+          // is not restarted.
+          primarySwatch: Colors.blue,
+        ),
+        home: const MyApp()));
+  }, (e, s) {
+    // debugPrint("Flutter Error", error: Exception(e), stackTrace: s);
+    debugPrint("Flutter Error ${e.toString()}");
+  });
 }
 
 class MyApp extends StatefulWidget {
@@ -24,11 +44,11 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    initPlatformState();
+    initPlatformState(context);
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
+  Future<void> initPlatformState(BuildContext context) async {
     String platformVersion;
     // Platform messages may fail, so we use a try/catch PlatformException.
     // We also handle the message potentially returning null.
@@ -51,33 +71,53 @@ class _MyAppState extends State<MyApp> {
       /// data to be used in the dapp
 
       var requestMap = json.decode(barcode);
-      debugPrint('barcode: ${barcode.runtimeType}');
-      debugPrint("barcode-type: ${barcode['type']}");
+      //debugPrint('barcode: ${requestMap.runtimeType}');
+      //debugPrint("barcode-type: ${requestMap['type']}");
+      if (requestMap['type'] == "tezos_permission_request") {
+        // Navigator.of(context).push(
+        goToPermission(requestMap);
+      }
     });
   }
 
-  Future<List<dynamic>> readDAppFromQrCode() async {
-    dynamic qrcodeScanRes = '';
-    bool status = false;
-    try {
-      // qrcodeScanRes = FlutterBarcodeScanner.getBarcodeStreamReceiver(
-      //   "#4a5aed",
-      //   "Cancel",
-      //   true,
-      //   ScanMode.QR,
-      // );
-      qrcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-        "#4a5aed",
-        "Cancel",
-        true,
-        ScanMode.QR,
-      );
-      status = true;
-    } on PlatformException {
-      qrcodeScanRes = "Error lors du scan";
-    }
-    return [status, qrcodeScanRes];
+  void goToPermission(dynamic requestMap) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => PermissionPage(
+          dappAddress: Beacondart.getDappAddress() ?? '',
+          dappImageUrl: Beacondart.getDappImageUrl() ?? '',
+          dappName: Beacondart.getDappName() ?? '',
+          dappBlockChain: requestMap['appMetadata']['blockchainIdentifier'],
+          dappNetwork: requestMap['network']['type'],
+          dappScope:
+              requestMap['scopes'].fold('initialValue', (previousValue, element) => previousValue + ' ' + element),
+        ),
+      ),
+    );
   }
+
+  // Future<List<dynamic>> readDAppFromQrCode() async {
+  //   dynamic qrcodeScanRes = '';
+  //   bool status = false;
+  //   try {
+  //     // qrcodeScanRes = FlutterBarcodeScanner.getBarcodeStreamReceiver(
+  //     //   "#4a5aed",
+  //     //   "Cancel",
+  //     //   true,
+  //     //   ScanMode.QR,
+  //     // );
+  //     qrcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+  //       "#4a5aed",
+  //       "Cancel",
+  //       true,
+  //       ScanMode.QR,
+  //     );
+  //     status = true;
+  //   } on PlatformException {
+  //     qrcodeScanRes = "Error lors du scan";
+  //   }
+  //   return [status, qrcodeScanRes];
+  // }
 
   Future<List<dynamic>> readDAppFromQrCodeV2() async {
     dynamic qrcodeScanRes = '';
@@ -93,43 +133,41 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Center(
-          child: Column(
-            children: [
-              Text('Running on: $_platformVersion\n'),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Plugin example app'),
+      ),
+      body: Center(
+        child: Column(
+          children: [
+            Text('Running on: $_platformVersion\n'),
 
-              ///Scan Icon
-              GestureDetector(
-                onTap: () async {
-                  //Scan QrCode
-                  // List<dynamic> array = await readDAppFromQrCode();
-                  List<dynamic> array = await readDAppFromQrCodeV2();
-                  if (array[1] == '-1' || array[0] == false) {
-                    setState(() {
-                      isInvalidDappError = true;
-                    });
-                  }
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                  child: Row(
-                    children: const [
-                      Text("Scan Qr Code"),
-                      Icon(
-                        Icons.camera_alt,
-                        size: 50,
-                      ),
-                    ],
-                  ),
+            ///Scan Icon
+            GestureDetector(
+              onTap: () async {
+                //Scan QrCode
+                // List<dynamic> array = await readDAppFromQrCode();
+                List<dynamic> array = await readDAppFromQrCodeV2();
+                if (array[1] == '-1' || array[0] == false) {
+                  setState(() {
+                    isInvalidDappError = true;
+                  });
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                child: Row(
+                  children: const [
+                    Text("Scan Qr Code"),
+                    Icon(
+                      Icons.camera_alt,
+                      size: 50,
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

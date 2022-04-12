@@ -58,8 +58,6 @@ class BeacondartPlugin :
   /// when the Flutter Engine is detached from the Activity
   private val CHANNEL: String = "beacondart"
   private val CHANNEL_EVENT: String = "beacondart_receiver"
-  // private val CHANNEL_REQ_EVENT: String = "beacondart_request_receiver"
-  // private val CHANNEL_RESP_EVENT: String = "beacondart_response_receiver"
   private lateinit var channel: MethodChannel
 
   // private val viewModel by viewModels<BeacondartViewModel>()
@@ -75,8 +73,6 @@ class BeacondartPlugin :
   private var beaconOperationStream: EventSink? = null
 
   private var eventChannel: EventChannel? = null
-  // private var eventReqChannel: EventChannel? = null
-  // private var eventRespChannel: EventChannel? = null
 
   /**
    * V2 embedding
@@ -115,10 +111,6 @@ class BeacondartPlugin :
     } else {
       eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, CHANNEL_EVENT)
       eventChannel!!.setStreamHandler(this)
-//      eventReqChannel = EventChannel(flutterPluginBinding.binaryMessenger, CHANNEL_REQ_EVENT)
-//      eventRespChannel = EventChannel(flutterPluginBinding.binaryMessenger, CHANNEL_RESP_EVENT)
-//      eventReqChannel!!.setStreamHandler(this)
-//      eventRespChannel!!.setStreamHandler(this)
     }
   }
 
@@ -165,6 +157,15 @@ class BeacondartPlugin :
             result.error("error", "Please set id, name, publicKey, relayServer and version", null)
             return
           }
+        } catch (e: Exception) {
+          result.error("exception", e.message, e.stackTrace)
+          // onError(e)
+        }
+      }
+      "getPeers" -> {
+        try {
+          val listPeers = viewModel.getPeers()
+          result.success(listPeers)
         } catch (e: Exception) {
           result.error("exception", e.message, e.stackTrace)
           // onError(e)
@@ -343,8 +344,6 @@ class BeacondartPlugin :
     lifecycle = null
     channel.setMethodCallHandler(null)
     eventChannel!!.setStreamHandler(null)
-    //eventReqChannel!!.setStreamHandler(null)
-    //eventRespChannel!!.setStreamHandler(null)
     channel = MethodChannel(null, "")
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
       applicationContext!!.unregisterActivityLifecycleCallbacks(observer)
@@ -352,19 +351,15 @@ class BeacondartPlugin :
     applicationContext = null
   }
 
-  // private fun onBeaconRequest(beaconRequest: BeaconRequest) {
-  //     messageTextView.text = json.encodeToString(beaconRequest.toJson(json))
-  // }
+
 
   private fun onBeaconRequest(request: BeaconRequest) {
     val jsonReq = json.encodeToString(request.toJson(json))
 
     logInfo("beaconRequest", jsonReq)
 
-    // this.lifecycleScope.launch {
     viewModel.viewModelScope.launch {
       try {
-
         beaconOperationStream?.success(jsonReq)
       } catch (e: Exception) {
         // pendingResult?.error("error ", "Stream error", e)
@@ -397,10 +392,7 @@ class BeacondartPlugin :
     // this.lifecycleScope.launch {
     viewModel.viewModelScope.launch {
       try {
-        // activity!!.runOnUiThread { beaconOperationStream!!.success(response) }
-
         viewModel.beaconClient?.respond(response)
-        // pendingResult?.success(response)
         beaconOperationStream?.success(json.encodeToString(response.toJson(json)))
       } catch (e: Exception) {
         // pendingResult?.error("error ", "Stream error", e)
@@ -451,6 +443,7 @@ class BeacondartPlugin :
 
   private fun onError(exception: Throwable) {
     exception.printStackTrace()
+    beaconOperationStream?.error("error - exception", exception.message, exception.stackTrace)
     // pendingResult?.error("error", exception.message, null)
   }
 
@@ -471,9 +464,6 @@ class BeacondartPlugin :
     private var activity: FlutterActivity? = null
   }
 
-  //  override fun getViewModelStore(): ViewModelStore {
-  //    return this.viewModelStore
-  //  }
 
   /** Activity lifecycle observer */
   @SuppressLint("NewApi")
