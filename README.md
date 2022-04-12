@@ -37,6 +37,7 @@ Ultimately one dart singleton class `BeaconWalletClient` is exposed with the fol
 BeaconWalletClient {
     addPeer(Map<String, dynamic> dApp)
     removePeer(Map<String, dynamic> dApp)
+    removePeers()
     getPeers()
     onBeaconRequest(Callback callback)
     BeaconWalletClient() {
