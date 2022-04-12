@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class DetailsPage extends StatefulWidget {
   final String dappImageUrl;
   final String dappName;
+  final String dappId;
   final String dappAddress;
   final String dappScope;
   final String dappBlockChain;
@@ -12,6 +13,7 @@ class DetailsPage extends StatefulWidget {
       {Key? key,
       required this.dappImageUrl,
       required this.dappName,
+      required this.dappId,
       required this.dappAddress,
       required this.dappScope,
       required this.dappBlockChain,
@@ -60,7 +62,7 @@ class _DetailsPageState extends State<DetailsPage> {
               ///Scan Icon
               GestureDetector(
                   onTap: () async {
-                    Beacondart.onConnectToDApp();
+                    Beacondart.onDisconnectToDApp(widget.dappId);
                     Navigator.of(context).pop();
                   },
                   child: Padding(

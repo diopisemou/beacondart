@@ -18,6 +18,7 @@ class Beacondart {
   static String? _getDappAddress;
   static String? _getDappImageUrl;
   static String? _getDappName;
+  static String? _getDappId;
 
   static Future<String?> get platformVersion async {
     final String? version = await _channel.invokeMethod('getPlatformVersion');
@@ -63,6 +64,7 @@ class Beacondart {
           var relayServer = dappJson['relayServer'];
           var version = dappJson['version'];
           var type = dappJson['type'];
+          _getDappId = id;
           _getDappName = name;
           _getDappAddress = publicKey;
           _getDappImageUrl = relayServer;
@@ -220,6 +222,10 @@ class Beacondart {
 
   static String? getDappName() {
     return _getDappName;
+  }
+
+  static String? getDappId() {
+    return _getDappId;
   }
 
   static String? getDappImageUrl() {

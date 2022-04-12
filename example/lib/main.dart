@@ -87,6 +87,7 @@ class _MyAppState extends State<MyApp> {
           dappAddress: Beacondart.getDappAddress() ?? '',
           dappImageUrl: Beacondart.getDappImageUrl() ?? '',
           dappName: Beacondart.getDappName() ?? '',
+          dappId: Beacondart.getDappName() ?? '',
           dappBlockChain: requestMap['appMetadata']['blockchainIdentifier'],
           dappNetwork: requestMap['network']['type'],
           dappScope:

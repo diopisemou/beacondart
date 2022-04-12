@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 class PermissionPage extends StatefulWidget {
   final String dappImageUrl;
   final String dappName;
+  final String dappId;
   final String dappAddress;
   final String dappScope;
   final String dappBlockChain;
@@ -13,6 +14,7 @@ class PermissionPage extends StatefulWidget {
       {Key? key,
       required this.dappImageUrl,
       required this.dappName,
+      required this.dappId,
       required this.dappAddress,
       required this.dappScope,
       required this.dappBlockChain,
@@ -38,6 +40,7 @@ class _PermissionPageState extends State<PermissionPage> {
           dappAddress: Beacondart.getDappAddress() ?? '',
           dappImageUrl: Beacondart.getDappImageUrl() ?? '',
           dappName: Beacondart.getDappName() ?? '',
+          dappId: Beacondart.getDappName() ?? '',
           dappBlockChain: widget.dappBlockChain,
           dappNetwork: widget.dappNetwork,
           dappScope: widget.dappScope,
