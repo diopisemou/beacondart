@@ -81,6 +81,20 @@ class BeacondartViewModel : ViewModel() {
         }
     }
 
+    fun subscribeToRequests(): LiveData<Result<BeaconRequest>> = liveData {
+        try {
+
+            beaconClient?.connect()
+                ?.onEach { result -> result.getOrNull()?.let { saveAwaitingRequest(it) } }
+                ?.collect { emit(it) }
+
+        } catch (e: Exception) {
+            // result.error("exception", e.message, e.stackTrace)
+            onError(e)
+            throw e
+        }
+    }
+
     fun respondExample() {
         val request = awaitingRequest ?: return
 
@@ -162,6 +176,10 @@ class BeacondartViewModel : ViewModel() {
     private fun removeAwaitingRequest() {
         awaitingRequest = null
         checkForAwaitingRequest()
+    }
+
+    fun getAwaitingRequest() : BeaconRequest? {
+        return awaitingRequest
     }
 
     private fun onError(exception: Throwable) {

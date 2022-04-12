@@ -208,22 +208,45 @@ class BeacondartPlugin :
           onError(e)
         }
       }
+      "onDisconnectToDApp" -> {
+        try {
+          val id: String? = call.argument("id")
+          if (id != null) {
+            viewModel.removePeer(id)
+            pendingResult!!.success("disconnected from dapp")
+          } else {
+            result.error("error", "Please set id", null)
+            return
+          }
+
+
+        } catch (e: Exception) {
+          // result.error("exception", e.message, e.stackTrace)
+          onError(e)
+        }
+      }
       "onConfirmConnectToDApp" -> {
         try {
-          viewModel.beginBeacon().observe(this) { result ->
+          viewModel.subscribeToRequests().observe(this) { result ->
             result.getOrNull()?.let { onAcceptBeaconRequest(it) /*onBeaconRequest(it)*/ }
             result.exceptionOrNull()?.let { onError(it) }
           }
+
+          viewModel.getAwaitingRequest()?.let { onAcceptBeaconRequest(it) }
+
         } catch (e: Exception) {
 
           onError(e)
         }
       }"onRejectConnectToDApp" -> {
         try {
-          viewModel.beginBeacon().observe(this) { result ->
+          viewModel.subscribeToRequests().observe(this) { result ->
             result.getOrNull()?.let { onRejectBeaconRequest(it) }
             result.exceptionOrNull()?.let { onError(it) }
           }
+
+          viewModel.getAwaitingRequest()?.let { onRejectBeaconRequest(it) }
+
         } catch (e: Exception) {
 
           onError(e)
@@ -237,10 +260,10 @@ class BeacondartPlugin :
           } else {
             viewModel.onInit()
 
-            viewModel.beaconClient?.connect()?.asLiveData()?.observe(this) { result ->
-              result.getOrNull()?.let { onBeaconRequest(it) }
-              result.exceptionOrNull()?.let { onError(it) }
-            }
+//            viewModel.beaconClient?.connect()?.asLiveData()?.observe(this) { result ->
+//              result.getOrNull()?.let { onBeaconRequest(it) }
+//              result.exceptionOrNull()?.let { onError(it) }
+//            }
 
             viewModel.beginBeacon().observe(this) { result ->
               result.getOrNull()?.let { onBeaconRequest(it) }
@@ -444,7 +467,7 @@ class BeacondartPlugin :
   private fun onError(exception: Throwable) {
     exception.printStackTrace()
     beaconOperationStream?.error("error - exception", exception.message, exception.stackTrace)
-    // pendingResult?.error("error", exception.message, null)
+    pendingResult?.error("error", exception.message, null)
   }
 
   data class State(

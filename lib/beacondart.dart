@@ -66,9 +66,10 @@ class Beacondart {
           _getDappName = name;
           _getDappAddress = publicKey;
           _getDappImageUrl = relayServer;
-          addPeer(id: id, name: name, publicKey: publicKey, relayServer: relayServer, version: version);
+
+          onConnectToDApp();
           Future.delayed(Duration(milliseconds: 500), () {
-            onConnectToDApp();
+            addPeer(id: id, name: name, publicKey: publicKey, relayServer: relayServer, version: version);
           });
           // Future.delayed(Duration(milliseconds: 500), () {
           //   onConnectToDApp();
@@ -129,7 +130,7 @@ class Beacondart {
 
   static Future<bool?> onConfirmConnectToDApp() async {
     try {
-      var result = await _channel.invokeMethod('onConfirmConnectToDApp');
+      await _channel.invokeMethod('onConfirmConnectToDApp');
       _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
       return true;
     } on PlatformException catch (e) {
@@ -142,7 +143,7 @@ class Beacondart {
 
   static Future<bool?> onRejectConnectToDApp() async {
     try {
-      var result = await _channel.invokeMethod('onRejectConnectToDApp');
+      await _channel.invokeMethod('onRejectConnectToDApp');
       _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
       return true;
     } on PlatformException catch (e) {
@@ -156,6 +157,23 @@ class Beacondart {
   static Future<bool?> onConnectToDApp() async {
     try {
       var result = await _channel.invokeMethod('onConnectToDApp');
+      _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
+      return true;
+    } on PlatformException catch (e) {
+      debugPrint(e.toString());
+    } on Exception catch (e) {
+      debugPrint("Erreur onConnectToDApp");
+      return false;
+    }
+  }
+
+  static Future<bool?> onDisconnectToDApp(String? id) async {
+    try {
+      Map params = <String, String>{
+        'id': id ?? '',
+      };
+
+      var result = await _channel.invokeMethod('onDisconnectToDApp', params);
       _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
       return true;
     } on PlatformException catch (e) {

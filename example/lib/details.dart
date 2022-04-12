@@ -1,15 +1,14 @@
 import 'package:beacondart/beacondart.dart';
-import 'package:beacondart_example/details.dart';
 import 'package:flutter/material.dart';
 
-class PermissionPage extends StatefulWidget {
+class DetailsPage extends StatefulWidget {
   final String dappImageUrl;
   final String dappName;
   final String dappAddress;
   final String dappScope;
   final String dappBlockChain;
   final String dappNetwork;
-  const PermissionPage(
+  const DetailsPage(
       {Key? key,
       required this.dappImageUrl,
       required this.dappName,
@@ -20,30 +19,15 @@ class PermissionPage extends StatefulWidget {
       : super(key: key);
 
   @override
-  State<PermissionPage> createState() => _PermissionPageState();
+  State<DetailsPage> createState() => _DetailsPageState();
 }
 
-class _PermissionPageState extends State<PermissionPage> {
+class _DetailsPageState extends State<DetailsPage> {
   bool isInvalidDappError = false;
 
   @override
   void initState() {
     super.initState();
-  }
-
-  void goToDetails() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => DetailsPage(
-          dappAddress: Beacondart.getDappAddress() ?? '',
-          dappImageUrl: Beacondart.getDappImageUrl() ?? '',
-          dappName: Beacondart.getDappName() ?? '',
-          dappBlockChain: widget.dappBlockChain,
-          dappNetwork: widget.dappNetwork,
-          dappScope: widget.dappScope,
-        ),
-      ),
-    );
   }
 
   @override
@@ -76,29 +60,13 @@ class _PermissionPageState extends State<PermissionPage> {
               ///Scan Icon
               GestureDetector(
                   onTap: () async {
-                    Beacondart.onRejectConnectToDApp();
+                    Beacondart.onConnectToDApp();
                     Navigator.of(context).pop();
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 15.0),
                     child: Row(children: const [
-                      Text("Cancel"),
-                      Icon(
-                        Icons.check,
-                        size: 50,
-                      ),
-                    ]),
-                  )),
-
-              GestureDetector(
-                  onTap: () async {
-                    Beacondart.onConfirmConnectToDApp();
-                    goToDetails();
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                    child: Row(children: const [
-                      Text("Connect"),
+                      Text("Disconnec"),
                       Icon(
                         Icons.check,
                         size: 50,
