@@ -60,6 +60,7 @@ class BeaconWalletClient {
         callbacksById[call.arguments["id"]]!(call.arguments["args"]);
         break;
       default:
+
     }
   }
 
