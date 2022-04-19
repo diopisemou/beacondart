@@ -15,11 +15,6 @@ Pod::Spec.new do |s|
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
-  s.dependency 'BeaconCore'
-  s.dependency 'BeaconClientWallet'
-  s.dependency 'BeaconBlockchainSubstrate'
-  s.dependency 'BeaconBlockchainTezos'
-  s.dependency 'BeaconTransportP2PMatrix'
   s.platform = :ios, '12.0'
 
   # Flutter.framework does not contain a i386 slice.

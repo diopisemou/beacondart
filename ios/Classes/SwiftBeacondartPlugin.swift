@@ -9,6 +9,20 @@ public class SwiftBeacondartPlugin: NSObject, FlutterPlugin {
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    result("iOS " + UIDevice.current.systemVersion)
+    
+    switch call.method {
+        case "addPeer":
+            result("iOS " + UIDevice.current.systemVersion)
+        case "removePeer":
+            result("iOS " + UIDevice.current.systemVersion)
+        case "getPeers":
+            result("iOS " + UIDevice.current.systemVersion)
+        case "onBeaconRequest":
+            result("iOS " + UIDevice.current.systemVersion)
+        case "startBeacon":
+            result("iOS " + UIDevice.current.systemVersion)
+        default:
+            result(FlutterMethodNotImplemented)
+      }
   }
 }
