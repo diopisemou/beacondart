@@ -20,6 +20,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
   bool isInvalidDappError = false;
+  BeaconWalletClient bmw = BeaconWalletClient();
 
   @override
   void initState() {
@@ -33,7 +34,7 @@ class _MyAppState extends State<MyApp> {
     // Platform messages may fail, so we use a try/catch PlatformException.
     // We also handle the message potentially returning null.
     try {
-      platformVersion = await Beacondart.platformVersion ?? 'Unknown platform version';
+      platformVersion = await bmw.platgformVersion ?? 'Unknown platform version';
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
@@ -46,8 +47,8 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _platformVersion = platformVersion;
     });
-    Beacondart.onInit();
-    Beacondart.getOperationStreamReceiver()?.listen((barcode) {
+    bmw.onInit();
+    bmw.getOperationStreamReceiver()?.listen((barcode) {
       /// data to be used in the dapp
 
       debugPrint(barcode);
@@ -81,7 +82,7 @@ class _MyAppState extends State<MyApp> {
     dynamic qrcodeScanRes = '';
     bool status = false;
     try {
-      Beacondart.addDApp();
+      bmw.addDApp();
       status = true;
     } on PlatformException {
       qrcodeScanRes = "Error lors du scan";

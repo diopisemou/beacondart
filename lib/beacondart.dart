@@ -2,10 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/src/foundation/print.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:dart_bs58check/dart_bs58check.dart';
 
-class Beacondart {
+class BeaconWalletClient {
   static const MethodChannel _channel = MethodChannel('beacondart');
 
   static const EventChannel _eventChannel = EventChannel('beacondart_receiver');
@@ -14,9 +13,46 @@ class Beacondart {
 
   static bool? isInvalidDappError;
 
+  static final BeaconWalletClient _singleton = BeaconWalletClient._internal();
+
+  static final Map<int, void Function(MethodCall call)> callbacksById = {};
+
+  static int nextCallbackId = 0;
+
+  factory BeaconWalletClient() {
+    return _singleton;
+  }
+
+  BeaconWalletClient._internal();
+
+  Future<bool> init() async {
+    final bool beaconStarted = await _channel.invokeMethod("startBeacon");
+    return beaconStarted;
+  }
+
+  static Future<void> methodCallHandler(MethodCall call) async {
+    switch (call.method) {
+      case 'callListener':
+        callbacksById[call.arguments["id"]]!(call.arguments["args"]);
+        break;
+      default:
+    }
+  }
+
   static Future<String?> get platformVersion async {
     final String? version = await _channel.invokeMethod('getPlatformVersion');
     return version;
+  }
+
+  addPeers(Map<String, dynamic> dApp) async {}
+  removePeer(Map<String, dynamic> dApp) async {}
+  getPeers() async {}
+
+  onBeaconRequest(void Function(dynamic response) responder) async {
+    _channel.setMethodCallHandler(methodCallHandler);
+    int currentListenerId = nextCallbackId++;
+    callbacksById[currentListenerId] = responder;
+    await _channel.invokeMethod("onBeaconRequest", currentListenerId);
   }
 
   static Future<bool?> onInit() async {
@@ -34,12 +70,12 @@ class Beacondart {
     dynamic qrcodeScanRes = '';
     bool status = false;
     try {
-      qrcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-        "#4a5aed",
-        "Cancel",
-        true,
-        ScanMode.QR,
-      );
+      // qrcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+      //   "#4a5aed",
+      //   "Cancel",
+      //   true,
+      //   ScanMode.QR,
+      // );
       status = true;
 
       if (qrcodeScanRes == '-1' || status == false) {
