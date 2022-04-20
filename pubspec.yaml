@@ -10,7 +10,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_barcode_scanner: ^2.0.0
   dart_bs58check: ^3.0.2
 
 dev_dependencies:

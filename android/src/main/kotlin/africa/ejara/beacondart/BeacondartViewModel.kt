@@ -137,6 +137,15 @@ class BeacondartViewModel : ViewModel() {
         return listPeers;
     }
 
+    fun getPeer(id: String) : Peer ? {
+        var listPeers : Peer? = null
+        viewModelScope.launch {
+            val peers = beaconClient?.getPeers() // get subscribed peers
+            listPeers = peers!!.find { it.id == id }
+        }
+        return listPeers;
+    }
+
     fun removePeers() {
         viewModelScope.launch {
             beaconClient?.removeAllPeers()

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:beacondart/beacondart.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 //import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 //import 'package:dart_bs58check/dart_bs58check.dart';
 
@@ -97,34 +98,18 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  // Future<List<dynamic>> readDAppFromQrCode() async {
-  //   dynamic qrcodeScanRes = '';
-  //   bool status = false;
-  //   try {
-  //     // qrcodeScanRes = FlutterBarcodeScanner.getBarcodeStreamReceiver(
-  //     //   "#4a5aed",
-  //     //   "Cancel",
-  //     //   true,
-  //     //   ScanMode.QR,
-  //     // );
-  //     qrcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-  //       "#4a5aed",
-  //       "Cancel",
-  //       true,
-  //       ScanMode.QR,
-  //     );
-  //     status = true;
-  //   } on PlatformException {
-  //     qrcodeScanRes = "Error lors du scan";
-  //   }
-  //   return [status, qrcodeScanRes];
-  // }
-
   Future<List<dynamic>> readDAppFromQrCodeV2() async {
     dynamic qrcodeScanRes = '';
     bool status = false;
     try {
-      Beacondart.addDApp();
+      qrcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+        "#4a5aed",
+        "Cancel",
+        true,
+        ScanMode.QR,
+      );
+      // $JavaVersion.VERSION_1_8
+      Beacondart.addDApp(qrcodeScanRes);
       status = true;
     } on PlatformException {
       qrcodeScanRes = "Error lors du scan";

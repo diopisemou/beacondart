@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/src/foundation/print.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:dart_bs58check/dart_bs58check.dart';
 
 class Beacondart {
@@ -20,6 +19,11 @@ class Beacondart {
   static String? _getDappName;
   static String? _getDappId;
 
+  // typedef void MultiUseCallback(dynamic msg);
+  // typedef void CancelListening();
+  // int _nextCallbackId = 0;
+  // Map<int, MultiUseCallback> _callbacksById = new Map();
+
   static Future<String?> get platformVersion async {
     final String? version = await _channel.invokeMethod('getPlatformVersion');
     return version;
@@ -36,16 +40,9 @@ class Beacondart {
     }
   }
 
-  static Future<bool?> addDApp() async {
-    dynamic qrcodeScanRes = '';
+  static Future<bool?> addDApp(dynamic qrcodeScanRes) async {
     bool status = false;
     try {
-      qrcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-        "#4a5aed",
-        "Cancel",
-        true,
-        ScanMode.QR,
-      );
       status = true;
 
       if (qrcodeScanRes == '-1' || status == false) {
@@ -234,14 +231,20 @@ class Beacondart {
 }
 
 class P2pPeer extends Peer {
-  String? id = null;
-  String? name = null;
+  @override
+  String? id;
+  @override
+  String? name;
+  @override
   String publicKey;
   String relayServer;
+  @override
   String version = "1";
-  String? icon = null;
-  String? appUrl = null;
+  String? icon;
+  String? appUrl;
+  @override
   bool isPaired = false;
+  @override
   bool isRemoved = false;
 
   P2pPeer(
