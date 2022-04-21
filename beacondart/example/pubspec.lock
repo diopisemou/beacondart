@@ -15,6 +15,20 @@ packages:
       relative: true
     source: path
     version: "0.0.1"
+  beacondart_android:
+    dependency: transitive
+    description:
+      path: "../../beacondart_android"
+      relative: true
+    source: path
+    version: "0.0.1"
+  beacondart_platform_interface:
+    dependency: transitive
+    description:
+      path: "../../beacondart_platform_interface"
+      relative: true
+    source: path
+    version: "0.0.1"
   boolean_selector:
     dependency: transitive
     description:
@@ -205,6 +219,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "4.4.0"
+  plugin_platform_interface:
+    dependency: transitive
+    description:
+      name: plugin_platform_interface
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.1.2"
   pointycastle:
     dependency: transitive
     description:

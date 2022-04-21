@@ -1,0 +1,116 @@
+group 'africa.ejara.beacondart'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    ext.kotlin_version = '1.6.10'
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:4.1.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        
+    }
+}
+
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
+apply {
+  from("external.gradle.kts")
+}
+
+android {
+    compileSdkVersion 31
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+        freeCompilerArgs += '-Xopt-in=kotlin.RequiresOptIn'
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
+    defaultConfig {
+        minSdkVersion 21
+    }
+}
+
+dependencies {
+
+    implementation fileTree(dir: "libs", include: ["*.jar"])
+
+    def withoutJna = { exclude group: "net.java.dev.jna" }
+    
+    def beacon_version = "3.1.0"
+
+    
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    
+    // Android
+    // val androidActivityVersion = "x.y.z"
+    // implementation("androidx.activity:activity-ktx:$androidActivityVersion")
+
+    // val androidLifecycleVersion = "x.y.z"
+    // implementation("androidx.lifecycle:lifecycle-livedata-ktx:$androidLifecycleVersion")
+
+
+    implementation "com.github.airgap-it.beacon-android-sdk:core:$beacon_version", withoutJna
+    implementation "com.github.airgap-it.beacon-android-sdk:client-wallet:$beacon_version", withoutJna
+
+    // optional, :client-wallet-compat
+    implementation "com.github.airgap-it.beacon-android-sdk:client-wallet-compat:$beacon_version", withoutJna
+
+    // optional, :blockchain-substrate
+    implementation "com.github.airgap-it.beacon-android-sdk:blockchain-substrate:$beacon_version", withoutJna
+    // optional, :blockchain-tezos
+    implementation "com.github.airgap-it.beacon-android-sdk:blockchain-tezos:$beacon_version", withoutJna
+
+    // optional, :transport-p2p-matrix
+    implementation "com.github.airgap-it.beacon-android-sdk:transport-p2p-matrix:$beacon_version", withoutJna
+
+    
+    def jnaVersion = "5.11.0"
+
+    implementation("net.java.dev.jna:jna:$jnaVersion@aar")
+    implementation("com.goterl:lazysodium-android:5.0.2@aar")
+
+    def lifecycleVersion = "2.3.1"
+
+    // Lifecycle
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:$lifecycleVersion")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion")
+
+    def xVersion = "1.3.1"
+
+    // Activity
+    implementation("androidx.activity:activity-ktx:$xVersion")
+    // Serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$xVersion")
+
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.1")
+    implementation 'androidx.appcompat:appcompat:1.3.0'
+    implementation project(path: ':flutter_plugin_android_lifecycle')
+
+}
