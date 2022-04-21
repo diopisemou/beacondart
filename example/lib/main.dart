@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:beacondart_example/permission.dart';
+import 'package:dart_bs58check/dart_bs58check.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
@@ -68,7 +69,7 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _platformVersion = platformVersion;
     });
-    BeaconWalletClient.onInit();
+    bmw.onInit();
     BeaconWalletClient.getOperationStreamReceiver()?.listen((barcode) {
       /// data to be used in the dapp
 
@@ -99,6 +100,29 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
+  Future<Map<String, dynamic>> getParamsMap(String qrCodeString) {
+    var dataIndex = qrCodeString.indexOf("data") + 5;
+    var dappString = qrCodeString.substring(dataIndex); //array[1].toString().length - 1
+    var decodedValue = bs58check.decoder.convert(dappString);
+    var dappMeta = String.fromCharCodes(decodedValue);
+    var dappJson = dappMeta.isNotEmpty ? json.decode(dappMeta) : null;
+    var id = dappJson['id'];
+    var name = dappJson['name'];
+    var publicKey = dappJson['publicKey'];
+    var relayServer = dappJson['relayServer'];
+    var version = dappJson['version'];
+
+    Map<String, dynamic> params = <String, dynamic>{
+      'id': id ?? '',
+      'name': name ?? '',
+      'publicKey': publicKey ?? '',
+      'relayServer': relayServer ?? '',
+      'version': version ?? '',
+    };
+
+    return Future.value(params);
+  }
+
   Future<List<dynamic>> readDAppFromQrCodeV2() async {
     dynamic qrcodeScanRes = '';
     bool status = false;
@@ -111,7 +135,17 @@ class _MyAppState extends State<MyApp> {
       );
       // $JavaVersion.VERSION_1_8
       // bmw.addDApp(qrcodeScanRes);
-      BeaconWalletClient.addDApp(qrcodeScanRes);
+      var params = await getParamsMap(qrcodeScanRes);
+
+      bmw.addPeer(params, (response) {
+        setState(() {
+          debugPrint(response.toString());
+        });
+        if (response.toString().contains('Peer Successfully added')) {
+          bmw.stopListening();
+        }
+      });
+      // bmw.addDApp(qrcodeScanRes);
       status = true;
     } on PlatformException {
       qrcodeScanRes = "Error lors du scan";

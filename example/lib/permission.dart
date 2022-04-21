@@ -27,6 +27,7 @@ class PermissionPage extends StatefulWidget {
 
 class _PermissionPageState extends State<PermissionPage> {
   bool isInvalidDappError = false;
+  BeaconWalletClient bmw = BeaconWalletClient();
 
   @override
   void initState() {
@@ -37,10 +38,10 @@ class _PermissionPageState extends State<PermissionPage> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => DetailsPage(
-          dappAddress: Beacondart.getDappAddress() ?? '',
-          dappImageUrl: Beacondart.getDappImageUrl() ?? '',
-          dappName: Beacondart.getDappName() ?? '',
-          dappId: Beacondart.getDappName() ?? '',
+          dappAddress: BeaconWalletClient.getDappAddress() ?? '',
+          dappImageUrl: BeaconWalletClient.getDappImageUrl() ?? '',
+          dappName: BeaconWalletClient.getDappName() ?? '',
+          dappId: BeaconWalletClient.getDappName() ?? '',
           dappBlockChain: widget.dappBlockChain,
           dappNetwork: widget.dappNetwork,
           dappScope: widget.dappScope,
@@ -79,7 +80,7 @@ class _PermissionPageState extends State<PermissionPage> {
               ///Scan Icon
               GestureDetector(
                   onTap: () async {
-                    Beacondart.onRejectConnectToDApp();
+                    bmw.onRejectConnectToDApp();
                     Navigator.of(context).pop();
                   },
                   child: Padding(
@@ -95,7 +96,7 @@ class _PermissionPageState extends State<PermissionPage> {
 
               GestureDetector(
                   onTap: () async {
-                    Beacondart.onConfirmConnectToDApp();
+                    bmw.onConfirmConnectToDApp();
                     goToDetails();
                   },
                   child: Padding(

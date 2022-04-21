@@ -26,6 +26,7 @@ class DetailsPage extends StatefulWidget {
 
 class _DetailsPageState extends State<DetailsPage> {
   bool isInvalidDappError = false;
+  BeaconWalletClient bmw = BeaconWalletClient();
 
   @override
   void initState() {
@@ -62,7 +63,7 @@ class _DetailsPageState extends State<DetailsPage> {
               ///Scan Icon
               GestureDetector(
                   onTap: () async {
-                    Beacondart.onDisconnectToDApp(widget.dappId);
+                    bmw.onDisconnectToDApp(widget.dappId);
                     Navigator.of(context).pop();
                   },
                   child: Padding(

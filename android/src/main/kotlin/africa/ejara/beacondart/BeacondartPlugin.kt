@@ -71,9 +71,9 @@ class BeacondartPlugin :
   private val json: Json by lazy { Json { prettyPrint = true } }
 
   private var pendingResult: Result? = null
-  private var arguments: Map<String, Any>? = null
+  // private var arguments: Map<String, Any>? = null
 
-  private val TAG: String = BeacondartPlugin::class.java.getSimpleName()
+  //private val TAG: String = BeacondartPlugin::class.java.getSimpleName()
 
   private var beaconOperationStream: EventSink? = null
 
@@ -93,6 +93,9 @@ class BeacondartPlugin :
   private var lifecycle: Lifecycle? = null
   private var observer: LifeCycleObserver? = null
   // kotlin("android.extensions")
+
+  // Callbacks
+  private val callbackById: MutableMap<Int, Runnable> = HashMap()
 
   private fun BeacondartPlugin(activity: FlutterActivity, registrar: Registrar) {
     BeacondartPlugin.activity = activity
@@ -120,7 +123,8 @@ class BeacondartPlugin :
 
 
     // Prepare channel
-    callBackChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "callbacks")
+    //callBackChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "callbacks")
+    callBackChannel = MethodChannel(flutterPluginBinding.binaryMessenger, CHANNEL_EVENT)
     callBackChannel.setMethodCallHandler { methodCall, result ->
       try {
         // Find a method with the same name in activity
@@ -145,37 +149,44 @@ class BeacondartPlugin :
     pendingResult = result
     when (call.method) {
       "getPlatformVersion" -> {
-        result.success("Android ${android.os.Build.VERSION.RELEASE}")
+        result.success("Android ${Build.VERSION.RELEASE}")
       }
       "onInitFunc" -> {
-        onInitFun(result)
+        onInitFunc(result)
       }
       "addPeerFunc" -> {
-        addPeerFun(call, result)
+        addPeerFunc(call, result)
       }
       "getPeersFunc" -> {
-        getPeersFun(call, result)
+        getPeersFunc(call, result)
+      }
+      "getPeerFunc" -> {
+        getPeerFunc(call, result)
       }
       "removePeeFunc" -> {
-        removePeerFun(call, result)
+        removePeerFunc(call, result)
       }
-      "removePeersFun" -> {
-        removePeersFun(call, result)
+      "removePeersFunc" -> {
+        removePeersFunc(call, result)
       }
-      "onConnectToDAppFun" -> {
-        onConnectToDAppFun(call, result)
+      "onConnectToDAppFunc" -> {
+        onConnectToDAppFunc(call, result)
       }
-      "onDisconnectToDAppFun" -> {
-        onDisconnectToDAppFun(call, result)
+      "onDisconnectToDAppFunc" -> {
+        onDisconnectToDAppFunc(call, result)
       }
-      "onConfirmConnectToDAppFun" -> {
-        onConfirmConnectToDAppFun(call, result)
+      "onConfirmConnectToDAppFunc" -> {
+        onConfirmConnectToDAppFunc(call, result)
       }
-      "onRejectConnectToDAppFun" -> {
-        onRejectConnectToDAppFun(call, result)
+      "onRejectConnectToDAppFunc" -> {
+        onRejectConnectToDAppFunc(call, result)
       }
-      "onSubscribeToRequestFun" -> {
-        onSubscribeToRequestFun(call, result)
+      "onSubscribeToRequestFunc" -> {
+        onSubscribeToRequestFunc(call, result)
+      }
+      "cancelListeningFunc" -> {
+        val currentListenerId: Int = call.argument("currentListenerId")!!
+        cancelListeningFunc(currentListenerId, result)
       }
       else -> result.notImplemented()
     }
@@ -194,7 +205,7 @@ class BeacondartPlugin :
     onAttachedToActivity(binding)
   }
 
-  fun onInitFun( @NonNull result: Result)
+  fun onInitFunc( @NonNull result: Result)
   {
     try {
       viewModel.onInit().runCatching {}
@@ -210,7 +221,7 @@ class BeacondartPlugin :
     }
   }
 
-  fun getPeersFun(@NonNull call: MethodCall,  @NonNull result: Result)
+  private fun getPeersFunc(@NonNull call: MethodCall, @NonNull result: Result)
   {
     try {
       val listPeers = viewModel.getPeers()
@@ -221,7 +232,7 @@ class BeacondartPlugin :
     }
   }
 
-  fun getPeerFun(@NonNull call: MethodCall,  @NonNull result: Result)
+  fun getPeerFunc(@NonNull call: MethodCall,  @NonNull result: Result)
   {
     try {
       val id: String? = call.argument("id")
@@ -233,10 +244,10 @@ class BeacondartPlugin :
     }
   }
 
-  fun addPeerFun(@NonNull call: MethodCall,  @NonNull result: Result)
+  fun addPeerFunc(@NonNull call: MethodCall,  @NonNull result: Result)
   {
     try {
-      val peer = call.arguments as Map<String, Any>
+      // val peer = call.arguments as Map<String, Any>
       val id: String? = call.argument("id")
       val name: String? = call.argument("name")
       val publicKey: String? = call.argument("publicKey")
@@ -250,7 +261,31 @@ class BeacondartPlugin :
         version != null
       ) {
         viewModel.addPeer(id, name, publicKey, relayServer, version)
-        result.success("Peer Successfully added ${android.os.Build.VERSION.RELEASE}")
+
+        // Get callback id
+        val currentListenerId: Int = call.argument("currentListenerId")!!
+
+        // Prepare a timer like self calling task
+        val handler = Handler()
+        callbackById[currentListenerId] = object : Runnable {
+          override fun run() {
+            if (callbackById.containsKey(currentListenerId)) {
+              val args: MutableMap<String, Any> = HashMap()
+              args["id"] = currentListenerId
+              args["args"] = "Hello listener! " + System.currentTimeMillis() / 1000
+              args["msg"] = "Peer Successfully added ${Build.VERSION.RELEASE}"
+
+              // Send some value to callback
+              channel.invokeMethod("callListener", args)
+            }
+            handler.postDelayed(this, 1000)
+          }
+        }
+
+        // Run task
+        callbackById[currentListenerId]?.let { handler.postDelayed(it, 500) }
+
+        result.success("Peer Successfully added ${Build.VERSION.RELEASE}")
       } else {
         result.error("error", "Please set id, name, publicKey, relayServer and version", null)
         return
@@ -261,7 +296,7 @@ class BeacondartPlugin :
     }
   }
 
-  fun removePeerFun(@NonNull call: MethodCall,  @NonNull result: Result)
+  private fun removePeerFunc(@NonNull call: MethodCall,  @NonNull result: Result)
   {
     try {
 
@@ -279,7 +314,7 @@ class BeacondartPlugin :
     }
   }
 
-  fun removePeersFun(@NonNull call: MethodCall,  @NonNull result: Result)
+  private fun removePeersFunc(@NonNull call: MethodCall, @NonNull result: Result)
   {
     try {
       viewModel.removePeers()
@@ -290,12 +325,36 @@ class BeacondartPlugin :
     }
   }
 
-  fun onConnectToDAppFun(@NonNull call: MethodCall,  @NonNull result: Result)
+  private fun onConnectToDAppFunc(@NonNull call: MethodCall,  @NonNull result: Result)
   {
     try {
       viewModel.onInit()
       viewModel.beginBeacon().observe(this) { result ->
-        result.getOrNull()?.let { onBeaconRequest(it)  }
+        result.getOrNull()?.let {
+          onBeaconRequest(it)
+
+          val currentListenerId: Int = call.argument("currentListenerId")!!
+          // Prepare a timer like self calling task
+          val handler = Handler()
+          callbackById[currentListenerId] = object : Runnable {
+            override fun run() {
+              if (callbackById.containsKey(currentListenerId)) {
+                val args: MutableMap<String, Any> = HashMap()
+                args["id"] = currentListenerId
+                args["args"] = "Hello listener! " + System.currentTimeMillis() / 1000
+                args["msg"] = "Beacon Connection Succesfully Initiated ${Build.VERSION.RELEASE}"
+
+                // Send some value to callback
+                channel.invokeMethod("callListener", args)
+              }
+              handler.postDelayed(this, 1000)
+            }
+          }
+
+          // Run task
+          callbackById[currentListenerId]?.let { handler.postDelayed(it, 1000) }
+
+        }
         result.exceptionOrNull()?.let { onError(it) }
       }
     } catch (e: Exception) {
@@ -304,7 +363,7 @@ class BeacondartPlugin :
     }
   }
 
-  fun onDisconnectToDAppFun(@NonNull call: MethodCall,  @NonNull result: Result)
+  fun onDisconnectToDAppFunc(@NonNull call: MethodCall,  @NonNull result: Result)
   {
     try {
       val id: String? = call.argument("id")
@@ -323,7 +382,7 @@ class BeacondartPlugin :
     }
   }
 
-  fun onConfirmConnectToDAppFun(@NonNull call: MethodCall,  @NonNull result: Result)
+  fun onConfirmConnectToDAppFunc(@NonNull call: MethodCall,  @NonNull result: Result)
   {
     try {
       viewModel.subscribeToRequests().observe(this) { result ->
@@ -339,7 +398,7 @@ class BeacondartPlugin :
     }
   }
 
-  fun onRejectConnectToDAppFun(@NonNull call: MethodCall,  @NonNull result: Result)
+  fun onRejectConnectToDAppFunc(@NonNull call: MethodCall,  @NonNull result: Result)
   {
     try {
       viewModel.subscribeToRequests().observe(this) { result ->
@@ -355,7 +414,7 @@ class BeacondartPlugin :
     }
   }
 
-  fun onSubscribeToRequestFun(@NonNull call: MethodCall,  @NonNull result: Result)
+  fun onSubscribeToRequestFunc(@NonNull call: MethodCall,  @NonNull result: Result)
   {
     try {
       if (viewModel.beaconClient != null) {
@@ -379,11 +438,11 @@ class BeacondartPlugin :
     }
   }
 
-  fun onConfirmRequestDAppFun(@NonNull call: MethodCall,  @NonNull result: Result)
+  fun onConfirmRequestDAppFunc(@NonNull call: MethodCall,  @NonNull result: Result)
   {
     try {
       viewModel.subscribeToRequests().observe(this) { result ->
-        result.getOrNull()?.let { onAcceptBeaconRequest(it) /*onBeaconRequest(it)*/ }
+        result.getOrNull()?.let { onAcceptBeaconRequest(it)  }
         result.exceptionOrNull()?.let { onError(it) }
       }
 
@@ -684,8 +743,6 @@ class BeacondartPlugin :
     return this.lifecycle!!
   }
 
-  // Callbacks
-  private val callbackById: MutableMap<Int, Runnable> = HashMap()
 
   fun startListening(args: Any, result: Result) {
     // Get callback id
@@ -714,7 +771,7 @@ class BeacondartPlugin :
     result.success(null)
   }
 
-  fun cancelListening(args: Any, result: Result) {
+  fun cancelListeningFunc(args: Any, result: Result) {
     // Get callback id
     val currentListenerId = args as Int
 
