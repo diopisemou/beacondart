@@ -22,8 +22,6 @@ class BeaconWalletClient {
   static String? _getDappName;
   static String? _getDappId;
 
-  // int _nextCallbackId = 0;
-  // Map<int, MultiUseCallback> _callbacksById = new Map();
   static final BeaconWalletClient _singleton = BeaconWalletClient._internal();
 
   // static final Map<int, void Function(MethodCall call)> callbacksById = {};
@@ -65,8 +63,12 @@ class BeaconWalletClient {
     int currentListenerId = nextCallbackId++;
     callbacksById[currentListenerId] = callback;
     await _channel.invokeMethod("startListening", currentListenerId);
+    Map params = <String, dynamic>{
+      'currentListenerId': currentListenerId,
+    };
     return () {
-      _channel.invokeMethod("cancelListeningFunc", currentListenerId);
+      //_channel.invokeMethod("cancelListeningFunc", currentListenerId);
+      _channel.invokeMethod("cancelListeningFunc", params);
       callbacksById.remove(currentListenerId);
     };
   }
@@ -76,8 +78,12 @@ class BeaconWalletClient {
     int currentListenerId = nextCallbackId;
     _channel.invokeMethod("cancelListeningFunc", currentListenerId);
     callbacksById.remove(currentListenerId);
+    Map params = <String, dynamic>{
+      'currentListenerId': currentListenerId,
+    };
     return () {
-      _channel.invokeMethod("cancelListeningFunc", currentListenerId);
+      //_channel.invokeMethod("cancelListeningFunc", currentListenerId);
+      _channel.invokeMethod("cancelListeningFunc", params);
       callbacksById.remove(currentListenerId);
     };
   }
@@ -105,56 +111,6 @@ class BeaconWalletClient {
     }
   }
 
-  // Future<bool?> addDApp(dynamic qrcodeScanRes) async {
-  //   bool status = false;
-  //   try {
-  //     // qrcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-  //     //   "#4a5aed",
-  //     //   "Cancel",
-  //     //   true,
-  //     //   ScanMode.QR,
-  //     // );
-  //     status = true;
-
-  //     if (qrcodeScanRes == '-1' || status == false) {
-  //       isInvalidDappError = true;
-  //     } else {
-  //       var dataIndex = qrcodeScanRes.indexOf("data") + 5;
-  //       var dappString = qrcodeScanRes.substring(dataIndex); //array[1].toString().length - 1
-  //       var decodedValue = bs58check.decoder.convert(dappString);
-  //       var dappMeta = String.fromCharCodes(decodedValue);
-  //       var dappJson = dappMeta.isNotEmpty ? json.decode(dappMeta) : null;
-  //       //
-  //       if (dappJson != null) {
-  //         var id = dappJson['id'];
-  //         var name = dappJson['name'];
-  //         var publicKey = dappJson['publicKey'];
-  //         var relayServer = dappJson['relayServer'];
-  //         var version = dappJson['version'];
-  //         var type = dappJson['type'];
-  //         _getDappId = id;
-  //         _getDappName = name;
-  //         _getDappAddress = publicKey;
-  //         _getDappImageUrl = relayServer;
-
-  //         onConnectToDApp();
-  //         Future.delayed(Duration(milliseconds: 500), () {
-  //           this.addPeer(id: id, name: name, publicKey: publicKey, relayServer: relayServer, version: version);
-  //         });
-  //         // Future.delayed(Duration(milliseconds: 500), () {
-  //         //   onConnectToDApp();
-  //         // });
-  //       }
-  //     }
-  //   } on PlatformException {
-  //     qrcodeScanRes = "Error lors du scan";
-  //   } on Exception {
-  //     qrcodeScanRes = "Erreur";
-  //   }
-
-  //   return true;
-  // }
-
   //addPeers(Map<String, dynamic> dApp) async {}
   //removePeer(Map<String, dynamic> dApp) async {}
   //getPeers() async {}
@@ -171,32 +127,17 @@ class BeaconWalletClient {
     dynamic? result = await _channel.invokeMethod("addPeerFunc", params);
     peers.add(P2pPeer.fromMap(dApp));
 
+    _getDappId = dApp['id'];
+    _getDappName = dApp['name'];
+    _getDappImageUrl = dApp['icon'];
+    _getDappAddress = dApp['publicKey'];
+    _getDappImageUrl = dApp['relayServer'];
+
     return () {
-      _channel.invokeMethod("cancelListeningFunc", currentListenerId);
+      _channel.invokeMethod("cancelListeningFunc", params);
       callbacksById.remove(currentListenerId);
     };
   }
-
-  // Future<bool?> addPeer({String? id, String? name, String? publicKey, String? relayServer, String? version}) async {
-  //   Map params = <String, String>{
-  //     'id': id ?? '',
-  //     'name': name ?? '',
-  //     'publicKey': publicKey ?? '',
-  //     'relayServer': relayServer ?? '',
-  //     'version': version ?? '',
-  //   };
-  //   dynamic? result = await _channel.invokeMethod('addPeerFunc', params);
-  //   peers.add(P2pPeer(
-  //       id: id,
-  //       name: name,
-  //       publicKey: publicKey ?? '',
-  //       relayServer: relayServer ?? '',
-  //       version: version ?? '',
-  //       icon: '',
-  //       appUrl: ''));
-  //   _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
-  //   return true;
-  // }
 
   Future<P2pPeer> getPeer() async {
     dynamic? result = await _channel.invokeMethod('getPeerFunc');
@@ -225,11 +166,19 @@ class BeaconWalletClient {
     return result;
   }
 
-  Future<bool?> onConfirmConnectToDApp() async {
+  onConfirmConnectToDApp(MultiUseCallback responder) async {
     try {
+      _channel.setMethodCallHandler(methodCallHandler);
+      int currentListenerId = nextCallbackId++;
+      callbacksById[currentListenerId] = responder;
+      Map params = <String, dynamic>{
+        'currentListenerId': currentListenerId,
+      };
       await _channel.invokeMethod('onConfirmConnectToDAppFunc');
-      _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
-      return true;
+      return () {
+        _channel.invokeMethod("cancelListeningFunc", params);
+        callbacksById.remove(currentListenerId);
+      };
     } on PlatformException catch (e) {
       debugPrint(e.toString());
     } on Exception catch (e) {
@@ -238,11 +187,19 @@ class BeaconWalletClient {
     }
   }
 
-  Future<bool?> onRejectConnectToDApp() async {
+  onRejectConnectToDApp(MultiUseCallback responder) async {
     try {
-      await _channel.invokeMethod('onRejectConnectToDAppFunc');
-      _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
-      return true;
+      _channel.setMethodCallHandler(methodCallHandler);
+      int currentListenerId = nextCallbackId++;
+      callbacksById[currentListenerId] = responder;
+      Map params = <String, dynamic>{
+        'currentListenerId': currentListenerId,
+      };
+      await _channel.invokeMethod('onRejectConnectToDAppFunc', params);
+      return () {
+        _channel.invokeMethod("cancelListeningFunc", params);
+        callbacksById.remove(currentListenerId);
+      };
     } on PlatformException catch (e) {
       debugPrint(e.toString());
     } on Exception catch (e) {
@@ -259,10 +216,13 @@ class BeaconWalletClient {
       Map params = <String, dynamic>{
         'currentListenerId': currentListenerId,
       };
-      dynamic? result = await _channel.invokeMethod("onConnectToDAppFunc", params);
+      // dynamic? result = await _channel.invokeMethod("onConnectToDAppFunc", params);
+      await _channel.invokeMethod("onConnectToDAppFunc", params);
+      //_onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
 
       return () {
-        _channel.invokeMethod("cancelListeningFunc", currentListenerId);
+        //_channel.invokeMethod("cancelListeningFunc", currentListenerId);
+        _channel.invokeMethod("cancelListeningFunc", params);
         callbacksById.remove(currentListenerId);
       };
 
@@ -326,7 +286,7 @@ class BeaconWalletClient {
   /// displayed if [isShowFlashIcon] is true. The text of the cancel button can
   /// be customized with the [cancelButtonText] string. Returns a stream of
   /// detected barcode strings.
-  static Stream? getOperationStreamReceiver() {
+  Stream? getOperationStreamReceiver() {
     // Pass params to the plugin
 
     // Invoke method to open camera, and then create an event channel which will

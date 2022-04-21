@@ -185,8 +185,7 @@ class BeacondartPlugin :
         onSubscribeToRequestFunc(call, result)
       }
       "cancelListeningFunc" -> {
-        val currentListenerId: Int = call.argument("currentListenerId")!!
-        cancelListeningFunc(currentListenerId, result)
+        cancelListeningFunc(call.arguments, result)
       }
       else -> result.notImplemented()
     }
@@ -285,7 +284,7 @@ class BeacondartPlugin :
         // Run task
         callbackById[currentListenerId]?.let { handler.postDelayed(it, 500) }
 
-        result.success("Peer Successfully added ${Build.VERSION.RELEASE}")
+        result.success("Peer Successfully added")
       } else {
         result.error("error", "Please set id, name, publicKey, relayServer and version", null)
         return
@@ -329,31 +328,32 @@ class BeacondartPlugin :
   {
     try {
       viewModel.onInit()
+
+      val currentListenerId: Int = call.argument("currentListenerId")!!
+      // Prepare a timer like self calling task
+      val handler = Handler()
+      callbackById[currentListenerId] = object : Runnable {
+        override fun run() {
+          if (callbackById.containsKey(currentListenerId)) {
+            val args: MutableMap<String, Any> = HashMap()
+            args["id"] = currentListenerId
+            args["args"] = "Hello listener! " + System.currentTimeMillis() / 1000
+            args["msg"] = "Beacon Connection Succesfully Initiated"
+            args["req"] = "Beacon Connection Succesfully Initiated"
+
+            // Send some value to callback
+            channel.invokeMethod("callListener", args)
+          }
+          handler.postDelayed(this, 1000)
+        }
+      }
+
+      // Run task
+      callbackById[currentListenerId]?.let { handler.postDelayed(it, 500) }
+
       viewModel.beginBeacon().observe(this) { result ->
         result.getOrNull()?.let {
           onBeaconRequest(it)
-
-          val currentListenerId: Int = call.argument("currentListenerId")!!
-          // Prepare a timer like self calling task
-          val handler = Handler()
-          callbackById[currentListenerId] = object : Runnable {
-            override fun run() {
-              if (callbackById.containsKey(currentListenerId)) {
-                val args: MutableMap<String, Any> = HashMap()
-                args["id"] = currentListenerId
-                args["args"] = "Hello listener! " + System.currentTimeMillis() / 1000
-                args["msg"] = "Beacon Connection Succesfully Initiated ${Build.VERSION.RELEASE}"
-
-                // Send some value to callback
-                channel.invokeMethod("callListener", args)
-              }
-              handler.postDelayed(this, 1000)
-            }
-          }
-
-          // Run task
-          callbackById[currentListenerId]?.let { handler.postDelayed(it, 1000) }
-
         }
         result.exceptionOrNull()?.let { onError(it) }
       }
@@ -392,6 +392,28 @@ class BeacondartPlugin :
 
       viewModel.getAwaitingRequest()?.let { onAcceptBeaconRequest(it) }
 
+      val currentListenerId: Int = call.argument("currentListenerId")!!
+      // Prepare a timer like self calling task
+      val handler = Handler()
+      callbackById[currentListenerId] = object : Runnable {
+        override fun run() {
+          if (callbackById.containsKey(currentListenerId)) {
+            val args: MutableMap<String, Any> = HashMap()
+            args["id"] = currentListenerId
+            args["args"] = "Hello listener! " + System.currentTimeMillis() / 1000
+            args["msg"] = "Connection Request Accepted Succesfully"
+            args["req"] = "Connection Request Accepted Succesfully"
+
+            // Send some value to callback
+            channel.invokeMethod("callListener", args)
+          }
+          handler.postDelayed(this, 1000)
+        }
+      }
+
+      // Run task
+      callbackById[currentListenerId]?.let { handler.postDelayed(it, 500) }
+
     } catch (e: Exception) {
 
       onError(e)
@@ -407,6 +429,28 @@ class BeacondartPlugin :
       }
 
       viewModel.getAwaitingRequest()?.let { onRejectBeaconRequest(it) }
+
+      val currentListenerId: Int = call.argument("currentListenerId")!!
+      // Prepare a timer like self calling task
+      val handler = Handler()
+      callbackById[currentListenerId] = object : Runnable {
+        override fun run() {
+          if (callbackById.containsKey(currentListenerId)) {
+            val args: MutableMap<String, Any> = HashMap()
+            args["id"] = currentListenerId
+            args["args"] = "Hello listener! " + System.currentTimeMillis() / 1000
+            args["msg"] = "Connection Request Rejected "
+            args["req"] = "Connection Request Rejected"
+
+            // Send some value to callback
+            channel.invokeMethod("callListener", args)
+          }
+          handler.postDelayed(this, 1000)
+        }
+      }
+
+      // Run task
+      callbackById[currentListenerId]?.let { handler.postDelayed(it, 500) }
 
     } catch (e: Exception) {
 
@@ -773,7 +817,10 @@ class BeacondartPlugin :
 
   fun cancelListeningFunc(args: Any, result: Result) {
     // Get callback id
-    val currentListenerId = args as Int
+    var arguments = args as Map<*, *>
+    val currentListenerId: Int =  arguments["currentListenerId"]!! as Int
+    //val currentListenerId: Int =  args("currentListenerId")!! as Int
+    //val currentListenerId = args as Int
 
     // Remove callback
     callbackById.remove(currentListenerId)

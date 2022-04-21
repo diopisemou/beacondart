@@ -70,14 +70,9 @@ class _MyAppState extends State<MyApp> {
       _platformVersion = platformVersion;
     });
     bmw.onInit();
-    BeaconWalletClient.getOperationStreamReceiver()?.listen((barcode) {
-      /// data to be used in the dapp
-
+    bmw.getOperationStreamReceiver()?.listen((barcode) {
       var requestMap = json.decode(barcode);
-      //debugPrint('barcode: ${requestMap.runtimeType}');
-      //debugPrint("barcode-type: ${requestMap['type']}");
       if (requestMap['type'] == "tezos_permission_request") {
-        // Navigator.of(context).push(
         goToPermission(requestMap);
       }
     });
@@ -108,6 +103,7 @@ class _MyAppState extends State<MyApp> {
     var dappJson = dappMeta.isNotEmpty ? json.decode(dappMeta) : null;
     var id = dappJson['id'];
     var name = dappJson['name'];
+    var icon = dappJson['icon'];
     var publicKey = dappJson['publicKey'];
     var relayServer = dappJson['relayServer'];
     var version = dappJson['version'];
@@ -115,6 +111,7 @@ class _MyAppState extends State<MyApp> {
     Map<String, dynamic> params = <String, dynamic>{
       'id': id ?? '',
       'name': name ?? '',
+      'icon': icon ?? '',
       'publicKey': publicKey ?? '',
       'relayServer': relayServer ?? '',
       'version': version ?? '',
@@ -133,20 +130,29 @@ class _MyAppState extends State<MyApp> {
         true,
         ScanMode.QR,
       );
-      // $JavaVersion.VERSION_1_8
-      // bmw.addDApp(qrcodeScanRes);
+
       var params = await getParamsMap(qrcodeScanRes);
 
-      bmw.addPeer(params, (response) {
-        setState(() {
-          debugPrint(response.toString());
-        });
-        if (response.toString().contains('Peer Successfully added')) {
-          bmw.stopListening();
+      var stop = await bmw.onConnectToDApp((response) async {
+        if (response['msg'].toString().contains('Beacon Connection Succesfully Initiated')) {
+          var stopPeer = await bmw.addPeer(params, (response) async {
+            setState(() {
+              debugPrint(response.toString());
+            });
+            if (response['msg'].toString().contains('Peer Successfully added')) {
+              bmw.stopListening();
+            }
+          });
+          stopPeer();
         }
       });
-      // bmw.addDApp(qrcodeScanRes);
-      status = true;
+      stop();
+      // bmw.getOperationStreamReceiver()?.listen((barcode) {
+      //   var requestMap = json.decode(barcode);
+      //   if (requestMap['type'] == "tezos_permission_request") {
+      //     goToPermission(requestMap);
+      //   }
+      // });
     } on PlatformException {
       qrcodeScanRes = "Error lors du scan";
     }
@@ -168,7 +174,7 @@ class _MyAppState extends State<MyApp> {
             GestureDetector(
               onTap: () async {
                 //Scan QrCode
-                // List<dynamic> array = await readDAppFromQrCode();
+
                 List<dynamic> array = await readDAppFromQrCodeV2();
                 if (array[1] == '-1' || array[0] == false) {
                   setState(() {

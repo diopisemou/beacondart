@@ -68,7 +68,7 @@ class _PermissionPageState extends State<PermissionPage> {
               const SizedBox(height: 20),
 
               const SizedBox(height: 20),
-              // Image(image: NetworkImage(widget.dappImageUrl)),
+              widget.dappImageUrl.isNotEmpty ? Image(image: NetworkImage(widget.dappImageUrl)) : Container(),
               const SizedBox(height: 20),
               Text('Dapp Name on: ${widget.dappName} \n'),
               const SizedBox(height: 20),
@@ -80,7 +80,11 @@ class _PermissionPageState extends State<PermissionPage> {
               ///Scan Icon
               GestureDetector(
                   onTap: () async {
-                    bmw.onRejectConnectToDApp();
+                    bmw.onRejectConnectToDApp((response) async {
+                      setState(() {
+                        debugPrint(response.toString());
+                      });
+                    });
                     Navigator.of(context).pop();
                   },
                   child: Padding(
@@ -96,7 +100,11 @@ class _PermissionPageState extends State<PermissionPage> {
 
               GestureDetector(
                   onTap: () async {
-                    bmw.onConfirmConnectToDApp();
+                    bmw.onConfirmConnectToDApp((response) async {
+                      setState(() {
+                        debugPrint(response.toString());
+                      });
+                    });
                     goToDetails();
                   },
                   child: Padding(
