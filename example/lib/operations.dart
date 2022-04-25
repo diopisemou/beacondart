@@ -2,30 +2,28 @@ import 'package:beacondart/beacondart.dart';
 import 'package:beacondart_example/details.dart';
 import 'package:flutter/material.dart';
 
-class PermissionPage extends StatefulWidget {
+class OperationsPage extends StatefulWidget {
   final String dappImageUrl;
   final String dappName;
   final String dappId;
   final String dappAddress;
-  final String dappScope;
   final String dappBlockChain;
   final String dappNetwork;
-  const PermissionPage(
+  const OperationsPage(
       {Key? key,
       required this.dappImageUrl,
       required this.dappName,
       required this.dappId,
       required this.dappAddress,
-      required this.dappScope,
       required this.dappBlockChain,
       required this.dappNetwork})
       : super(key: key);
 
   @override
-  State<PermissionPage> createState() => _PermissionPageState();
+  State<OperationsPage> createState() => _OperationsPageState();
 }
 
-class _PermissionPageState extends State<PermissionPage> {
+class _OperationsPageState extends State<OperationsPage> {
   bool isInvalidDappError = false;
   BeaconWalletClient bmw = BeaconWalletClient();
 
@@ -44,7 +42,7 @@ class _PermissionPageState extends State<PermissionPage> {
           dappId: bmw.getDappName() ?? '',
           dappBlockChain: widget.dappBlockChain,
           dappNetwork: widget.dappNetwork,
-          dappScope: widget.dappScope,
+          dappScope: "",
         ),
       ),
     );
@@ -75,8 +73,6 @@ class _PermissionPageState extends State<PermissionPage> {
               Text('Dapp Name on: ${widget.dappName} \n'),
               const SizedBox(height: 20),
               Text('Public address : ${widget.dappAddress} \n'),
-              const SizedBox(height: 20),
-              Text('Dapp Scope : ${widget.dappScope} \n'),
               const SizedBox(height: 20),
 
               ///Scan Icon

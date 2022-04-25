@@ -56,7 +56,7 @@ class _MyAppState extends State<MyApp> {
     // Platform messages may fail, so we use a try/catch PlatformException.
     // We also handle the message potentially returning null.
     try {
-      platformVersion = await BeaconWalletClient.platformVersion ?? 'Unknown platform version';
+      platformVersion = await bmw.platformVersion ?? 'Unknown platform version';
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
@@ -82,10 +82,10 @@ class _MyAppState extends State<MyApp> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => PermissionPage(
-          dappAddress: BeaconWalletClient.getDappAddress() ?? '',
-          dappImageUrl: BeaconWalletClient.getDappImageUrl() ?? '',
-          dappName: BeaconWalletClient.getDappName() ?? '',
-          dappId: BeaconWalletClient.getDappName() ?? '',
+          dappAddress: bmw.getDappAddress() ?? '',
+          dappImageUrl: bmw.getDappImageUrl() ?? '',
+          dappName: bmw.getDappName() ?? '',
+          dappId: bmw.getDappName() ?? '',
           dappBlockChain: requestMap['appMetadata']['blockchainIdentifier'],
           dappNetwork: requestMap['network']['type'],
           dappScope:
@@ -132,21 +132,36 @@ class _MyAppState extends State<MyApp> {
       );
 
       var params = await getParamsMap(qrcodeScanRes);
-
+      var msgVal = '';
+      var runNext = false;
       var stop = await bmw.onConnectToDApp((response) async {
-        if (response['msg'].toString().contains('Beacon Connection Succesfully Initiated')) {
+        var msgVal = response['msg'].toString();
+        if (msgVal.compareTo('Beacon Connection Succesfully Initiated') == 0) {
+          runNext = true;
+
           var stopPeer = await bmw.addPeer(params, (response) async {
-            setState(() {
-              debugPrint(response.toString());
-            });
-            if (response['msg'].toString().contains('Peer Successfully added')) {
+            msgVal = response['msg'].toString();
+            if (msgVal.compareTo('Peer Successfully added') == 0) {
               bmw.stopListening();
             }
           });
           stopPeer();
+
+          bmw.stopListening();
         }
       });
       stop();
+
+      // if (runNext) {
+      //   var stopPeer = await bmw.addPeer(params, (response) async {
+      //     msgVal = response['msg'].toString();
+      //     if (msgVal.compareTo('Peer Successfully added') == 0) {
+      //       bmw.stopListening();
+      //     }
+      //   });
+      //   stopPeer();
+      // }
+
       // bmw.getOperationStreamReceiver()?.listen((barcode) {
       //   var requestMap = json.decode(barcode);
       //   if (requestMap['type'] == "tezos_permission_request") {
@@ -154,6 +169,8 @@ class _MyAppState extends State<MyApp> {
       //   }
       // });
     } on PlatformException {
+      qrcodeScanRes = "Error lors du scan";
+    } on Exception {
       qrcodeScanRes = "Error lors du scan";
     }
     return [status, qrcodeScanRes];

@@ -1,5 +1,10 @@
+import 'dart:convert';
+
 import 'package:beacondart/beacondart.dart';
+import 'package:beacondart_example/operations.dart';
 import 'package:flutter/material.dart';
+
+import 'main.dart';
 
 class DetailsPage extends StatefulWidget {
   final String dappImageUrl;
@@ -31,6 +36,31 @@ class _DetailsPageState extends State<DetailsPage> {
   @override
   void initState() {
     super.initState();
+
+    bmw.onSubscribeToRequest((response) {
+      debugPrint('onSubscribeToRequest: $response');
+    });
+    bmw.getOperationStreamReceiver()?.listen((barcode) {
+      var requestMap = json.decode(barcode);
+      if (requestMap['type'] == "tezos_operation_request") {
+        goToOperations(requestMap);
+      }
+    });
+  }
+
+  void goToOperations(dynamic requestMap) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => OperationsPage(
+          dappAddress: bmw.getDappAddress() ?? '',
+          dappImageUrl: bmw.getDappImageUrl() ?? '',
+          dappName: bmw.getDappName() ?? '',
+          dappId: bmw.getDappName() ?? '',
+          dappBlockChain: requestMap['appMetadata']['blockchainIdentifier'],
+          dappNetwork: requestMap['network']['type'],
+        ),
+      ),
+    );
   }
 
   @override
@@ -63,13 +93,17 @@ class _DetailsPageState extends State<DetailsPage> {
               ///Scan Icon
               GestureDetector(
                   onTap: () async {
-                    bmw.onDisconnectToDApp(widget.dappId);
-                    Navigator.of(context).pop();
+                    bmw.onDisconnectToDApp(widget.dappId, null);
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                    // Navigator.of(context).pushAndRemoveUntil(
+                    //   MaterialPageRoute<void>(builder: (BuildContext context) => const MyApp()),
+                    //   ModalRoute.withName('/'),
+                    // );
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 15.0),
                     child: Row(children: const [
-                      Text("Disconnec"),
+                      Text("Disconnect"),
                       Icon(
                         Icons.check,
                         size: 50,

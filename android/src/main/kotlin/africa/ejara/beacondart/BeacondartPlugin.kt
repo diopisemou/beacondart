@@ -272,7 +272,7 @@ class BeacondartPlugin :
               val args: MutableMap<String, Any> = HashMap()
               args["id"] = currentListenerId
               args["args"] = "Hello listener! " + System.currentTimeMillis() / 1000
-              args["msg"] = "Peer Successfully added ${Build.VERSION.RELEASE}"
+              args["msg"] = "Peer Successfully added "
 
               // Send some value to callback
               channel.invokeMethod("callListener", args)
@@ -468,7 +468,28 @@ class BeacondartPlugin :
         viewModel.onInit()
 
         viewModel.beginBeacon().observe(this) { result ->
-          result.getOrNull()?.let { onBeaconRequest(it) }
+          result.getOrNull()?.let {
+            onBeaconRequest(it)
+
+            val currentListenerId: Int = call.argument("currentListenerId")!!
+            // Prepare a timer like self calling task
+            val handler = Handler()
+            callbackById[currentListenerId] = object : Runnable {
+              override fun run() {
+                if (callbackById.containsKey(currentListenerId)) {
+                  val args: MutableMap<String, Any> = HashMap()
+                  args["id"] = currentListenerId
+                  args["args"] = "Hello listener! " + System.currentTimeMillis() / 1000
+                  args["data"] = json.encodeToString(it.toJson(json))
+
+                  // Send some value to callback
+                  channel.invokeMethod("callListener", args)
+                }
+                handler.postDelayed(this, 1000)
+              }
+            }
+
+          }
           result.exceptionOrNull()?.let { onError(it) }
         }
 
@@ -698,7 +719,7 @@ class BeacondartPlugin :
 
   private fun onError(exception: Throwable) {
     exception.printStackTrace()
-    beaconOperationStream?.error("error - exception", exception.message, exception.stackTrace)
+    beaconOperationStream?.error("error - exception", exception.message, exception)
     pendingResult?.error("error", exception.message, null)
   }
 
@@ -817,7 +838,7 @@ class BeacondartPlugin :
 
   fun cancelListeningFunc(args: Any, result: Result) {
     // Get callback id
-    var arguments = args as Map<*, *>
+    var arguments = args as HashMap<*, *>
     val currentListenerId: Int =  arguments["currentListenerId"]!! as Int
     //val currentListenerId: Int =  args("currentListenerId")!! as Int
     //val currentListenerId = args as Int
