@@ -116,14 +116,6 @@ public class SwiftBeacondartPlugin: NSObject, FlutterPlugin {
         }
     }
 
-    func substrateAccount(network: Substrate.Network, publicKey: String, address: String) throws -> Substrate.Account {
-        try Substrate.Account(
-            publicKey: publicKey,
-            address: address,
-            network: network
-        )
-    }
-
     func tezosAccount(network: Tezos.Network, publicKey: String, address: String) throws -> Tezos.Account {
         try Tezos.Account(
             publicKey: publicKey,

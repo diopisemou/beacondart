@@ -48,6 +48,7 @@ android {
 
 dependencies {
     def beacon_version = "3.1.0"
+    def lifecycle_version = "2.5.0-beta01"
 
     // REQUIRED, :core
     implementation "com.github.airgap-it.beacon-android-sdk:core:$beacon_version"
@@ -64,6 +65,11 @@ dependencies {
 
     // optional, :transport-p2p-matrix
     implementation "com.github.airgap-it.beacon-android-sdk:transport-p2p-matrix:$beacon_version"
+
+    // LiveData
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
+    // Lifecycles only (without ViewModel or LiveData)
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
