@@ -117,11 +117,11 @@ class BeaconWalletClient {
   addPeer(Map<String, dynamic> dApp, MultiUseCallback responder) async {
     try {
       _channel.setMethodCallHandler(methodCallHandler);
-      int currentListenerId = nextCallbackId++;
-      callbacksById[currentListenerId] = responder;
+      //int currentListenerId = nextCallbackId++;
+      //callbacksById[currentListenerId] = responder;
       Map params = <String, dynamic>{
         ...dApp,
-        'currentListenerId': currentListenerId,
+        //'currentListenerId': currentListenerId,
       };
       await _channel.invokeMethod("addPeerFunc", params);
       peers.add(P2pPeer.fromMap(dApp));
@@ -133,7 +133,7 @@ class BeaconWalletClient {
 
       return () {
         _channel.invokeMethod("cancelListeningFunc", params);
-        callbacksById.remove(currentListenerId);
+        //callbacksById.remove(currentListenerId);
       };
     } on PlatformException catch (e) {
       debugPrint(e.toString());
