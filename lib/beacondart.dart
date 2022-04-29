@@ -116,7 +116,7 @@ class BeaconWalletClient {
       _channel.setMethodCallHandler(methodCallHandler);
       int? currentListenerId;
       if (responder != null) {
-        int currentListenerId = nextCallbackId++;
+        currentListenerId = nextCallbackId++;
         callbacksById[currentListenerId] = responder;
       }
       Map params = <String, dynamic>{
@@ -230,13 +230,16 @@ class BeaconWalletClient {
   Future<CancelListening> onConnectToDApp(MultiUseCallback responder) async {
     try {
       _channel.setMethodCallHandler(methodCallHandler);
-      int currentListenerId = nextCallbackId++;
-      callbacksById[currentListenerId] = responder;
+      int? currentListenerId;
+      if (responder != null) {
+        currentListenerId = nextCallbackId++;
+        callbacksById[currentListenerId] = responder;
+      }
       Map params = <String, dynamic>{
         'currentListenerId': currentListenerId,
       };
-      var result = await _channel.invokeMethod("onConnectToDAppFunc", params);
-      debugPrint(result.toString());
+      await _channel.invokeMethod("onConnectToDAppFunc", params);
+      //debugPrint(result.toString());
       return () {
         _channel.invokeMethod("cancelListeningFunc", params);
         callbacksById.remove(currentListenerId);

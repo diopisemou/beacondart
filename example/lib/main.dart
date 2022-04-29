@@ -71,13 +71,6 @@ class _MyAppState extends State<MyApp> {
     });
     bmw.onInit();
 
-    var stop = await bmw.onConnectToDApp((response) async {
-      var msgVal = response['msg'].toString();
-      if (msgVal.compareTo('Beacon Connection Succesfully Initiated') == 0) {
-        bmw.stopListening();
-      }
-    });
-
     // bmw.getOperationStreamReceiver()?.listen((barcode) {
     //   var requestMap = json.decode(barcode);
     //   if (requestMap['type'] == "tezos_permission_request") {
@@ -87,6 +80,15 @@ class _MyAppState extends State<MyApp> {
     bmw.onPermissionRequest((dynamic barcode) {
       goToPermission(barcode);
     });
+
+    var stop = await bmw.onConnectToDApp((response) {
+      var msgVal = response['msg'].toString();
+      if (msgVal.compareTo('Beacon Connection Succesfully Initiated') == 0) {
+        bmw.stopListening();
+      }
+    });
+    stop();
+    //bmw.stopListening();
   }
 
   void goToPermission(dynamic requestMap) {
@@ -114,18 +116,20 @@ class _MyAppState extends State<MyApp> {
     var dappJson = dappMeta.isNotEmpty ? json.decode(dappMeta) : null;
     var id = dappJson['id'];
     var name = dappJson['name'];
-    var icon = dappJson['icon'];
     var publicKey = dappJson['publicKey'];
     var relayServer = dappJson['relayServer'];
     var version = dappJson['version'];
+    var icon = dappJson['icon'];
+    var appUrl = dappJson['appUrl'];
 
     Map<String, dynamic> params = <String, dynamic>{
       'id': id ?? '',
       'name': name ?? '',
-      'icon': icon ?? '',
       'publicKey': publicKey ?? '',
       'relayServer': relayServer ?? '',
       'version': version ?? '',
+      'icon': icon ?? '',
+      'appUrl': appUrl ?? '',
     };
 
     return Future.value(params);
@@ -144,52 +148,29 @@ class _MyAppState extends State<MyApp> {
 
       var params = await getParamsMap(qrcodeScanRes);
       var msgVal = '';
-      var runNext = false;
+
       // var stop = await bmw.onConnectToDApp((response) async {
       //   var msgVal = response['msg'].toString();
       //   if (msgVal.compareTo('Beacon Connection Succesfully Initiated') == 0) {
-      //     runNext = true;
-
-      //     var stopPeer = await bmw.addPeer(params, (response) async {
+      //     var stopPeer = await bmw.addPeer(params, (response) {
       //       msgVal = response['msg'].toString();
-      //       if (msgVal.compareTo('Peer Successfully added') == 0 ||
-      //           msgVal.compareTo('Beacon Connection Succesfully Initiated') == 0) {
+      //       if (msgVal.compareTo('Peer Successfully added') == 0) {
       //         bmw.stopListening();
       //       }
       //     });
-      //     stopPeer();
-
       //     bmw.stopListening();
       //   }
       // });
-      var stopPeer = await bmw.addPeer(params, (response) async {
+
+      var stopPeer = await bmw.addPeer(params, (response) {
         msgVal = response['msg'].toString();
-        if (msgVal.compareTo('Peer Successfully added') == 0 ||
-            msgVal.compareTo('Beacon Connection Succesfully Initiated') == 0) {
+        if (msgVal.compareTo('Peer Successfully added') == 0) {
           bmw.stopListening();
         }
       });
+      //bmw.stopListening();
       stopPeer();
-
-      bmw.stopListening();
-      stopPeer();
-
-      // if (runNext) {
-      //   var stopPeer = await bmw.addPeer(params, (response) async {
-      //     msgVal = response['msg'].toString();
-      //     if (msgVal.compareTo('Peer Successfully added') == 0) {
-      //       bmw.stopListening();
-      //     }
-      //   });
-      //   stopPeer();
-      // }
-
-      // bmw.getOperationStreamReceiver()?.listen((barcode) {
-      //   var requestMap = json.decode(barcode);
-      //   if (requestMap['type'] == "tezos_permission_request") {
-      //     goToPermission(requestMap);
-      //   }
-      // });
+      //bmw.stopListening();
     } on PlatformException {
       qrcodeScanRes = "Error lors du scan";
     } on Exception {

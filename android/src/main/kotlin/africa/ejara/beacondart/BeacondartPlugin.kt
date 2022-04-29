@@ -220,6 +220,8 @@ class BeacondartPlugin :
       // val peer = call.arguments as Map<String, Any>
       val id: String? = call.argument("id")
       val name: String? = call.argument("name")
+      val icon: String? = call.argument("icon")
+      val appUrl: String? = call.argument("appUrl")
       val publicKey: String? = call.argument("publicKey")
       val relayServer: String? = call.argument("relayServer")
       val version: String? = call.argument("version")
@@ -228,11 +230,12 @@ class BeacondartPlugin :
         name != null &&
         publicKey != null &&
         relayServer != null &&
-        version != null
+        version != null &&
+        icon != null && appUrl != null
       ) {
-        viewModel.addPeer(id, name, publicKey, relayServer, version)
+        viewModel.addPeer(id, name, publicKey, relayServer, version, icon, appUrl)
 
-        if(call.argument<String>("currentListenerId") != null)
+        if(call.argument<Int>("currentListenerId") != null)
         {
           // Get callback id
           val currentListenerId: Int = call.argument("currentListenerId")!!
@@ -259,6 +262,12 @@ class BeacondartPlugin :
         }
 
         result.success("Peer Successfully added")
+
+
+        viewModel.subscribeToRequests().observe(this) { result ->
+          result.getOrNull()?.let { onBeaconRequest(it) }
+          result.exceptionOrNull()?.let { onError(it) }
+        }
       } else {
         result.error("error", "Please set id, name, publicKey, relayServer and version", null)
         return
@@ -303,27 +312,30 @@ class BeacondartPlugin :
     try {
       viewModel.onInit()
 
-      val currentListenerId: Int = call.argument("currentListenerId")!!
-      // Prepare a timer like self calling task
-      val handler = Handler()
-      callbackById[currentListenerId] = object : Runnable {
-        override fun run() {
-          if (callbackById.containsKey(currentListenerId)) {
-            val args: MutableMap<String, Any> = HashMap()
-            args["id"] = currentListenerId
-            args["args"] = "Hello listener! " + System.currentTimeMillis() / 1000
-            args["msg"] = "Beacon Connection Succesfully Initiated"
-            args["req"] = "Beacon Connection Succesfully Initiated"
+      if(call.argument<Int>("currentListenerId") != null)
+      {
+        val currentListenerId: Int = call.argument("currentListenerId")!!
+        // Prepare a timer like self calling task
+        val handler = Handler()
+        callbackById[currentListenerId] = object : Runnable {
+          override fun run() {
+            if (callbackById.containsKey(currentListenerId)) {
+              val args: MutableMap<String, Any> = HashMap()
+              args["id"] = currentListenerId
+              args["args"] = "Hello listener! " + System.currentTimeMillis() / 1000
+              args["msg"] = "Beacon Connection Succesfully Initiated"
+              args["req"] = "Beacon Connection Succesfully Initiated"
 
-            // Send some value to callback
-            channel.invokeMethod("callListener", args)
+              // Send some value to callback
+              channel.invokeMethod("callListener", args)
+            }
+            handler.postDelayed(this, 1000)
           }
-          handler.postDelayed(this, 1000)
         }
-      }
 
-      // Run task
-      callbackById[currentListenerId]?.let { handler.postDelayed(it, 500) }
+        // Run task
+        callbackById[currentListenerId]?.let { handler.postDelayed(it, 500) }
+      }
 
       viewModel.beginBeacon().observe(this) { result ->
         result.getOrNull()?.let {

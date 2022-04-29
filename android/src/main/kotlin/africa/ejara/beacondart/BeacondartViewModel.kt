@@ -120,8 +120,9 @@ class BeacondartViewModel : ViewModel() {
         }
     }
 
-    fun addPeer(id: String, name: String, publicKey: String, relayServer: String, version: String) {
-        val peer = P2pPeer(id = id, name = name, publicKey = publicKey, relayServer = relayServer, version = version)
+    fun addPeer(id: String, name: String, publicKey: String, relayServer: String, version: String, icon: String, appUrl: String ) {
+        val peer = P2pPeer(id = id, name = name, publicKey = publicKey,
+            relayServer = relayServer, version = version, icon = icon, appUrl = appUrl)
         viewModelScope.launch {
             beaconClient?.addPeers(peer)
             checkForPeers()
