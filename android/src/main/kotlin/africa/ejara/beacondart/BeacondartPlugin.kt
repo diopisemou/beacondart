@@ -63,7 +63,6 @@ class BeacondartPlugin :
   private val CHANNEL: String = "beacondart"
   private val CHANNEL_EVENT: String = "beacondart_receiver"
   private lateinit var channel: MethodChannel
-  private lateinit var callBackChannel: MethodChannel
 
   // private val viewModel by viewModels<BeacondartViewModel>()
   private lateinit var viewModel: BeacondartViewModel
@@ -71,9 +70,6 @@ class BeacondartPlugin :
   private val json: Json by lazy { Json { prettyPrint = true } }
 
   private var pendingResult: Result? = null
-  // private var arguments: Map<String, Any>? = null
-
-  //private val TAG: String = BeacondartPlugin::class.java.getSimpleName()
 
   private var beaconOperationStream: EventSink? = null
 
@@ -121,27 +117,6 @@ class BeacondartPlugin :
       eventChannel!!.setStreamHandler(this)
     }
 
-
-    // Prepare channel
-    //callBackChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "callbacks")
-    callBackChannel = MethodChannel(flutterPluginBinding.binaryMessenger, CHANNEL_EVENT)
-    callBackChannel.setMethodCallHandler { methodCall, result ->
-      try {
-        // Find a method with the same name in activity
-        val method: Method = BeacondartPlugin::class.java.getDeclaredMethod(
-          methodCall.method,
-          Any::class.java,
-          Result::class.java
-        )
-
-        // Call method if exists
-        method.setAccessible(true)
-        method.invoke(this@BeacondartPlugin, methodCall.arguments, result)
-      } catch (t: Throwable) {
-        Log.e("Playground", "Exception during channel invoke", t)
-        result.error("Exception during channel invoke", t.message, null)
-      }
-    }
   }
 
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
@@ -209,11 +184,7 @@ class BeacondartPlugin :
     try {
       viewModel.onInit().runCatching {}
       result.success("beacon Created ${viewModel.beaconClient}")
-      //          BeacondartViewModel.tezosAccount(
-      //            "edpkvL3FNBYHdDohfVu6XdtHiRGxmzymR7bKo4J1dAeAs23V8PkkKu",
-      //            "tz1ajkyd4hg6gExtVHBUAD269T9VpxfR74om",
-      //            null,
-      //          )
+
     } catch (e: Exception) {
       result.error("exception", e.message, e.stackTrace)
       // onError(e)
@@ -261,28 +232,31 @@ class BeacondartPlugin :
       ) {
         viewModel.addPeer(id, name, publicKey, relayServer, version)
 
-        // Get callback id
-        val currentListenerId: Int = call.argument("currentListenerId")!!
+        if(call.argument<String>("currentListenerId") != null)
+        {
+          // Get callback id
+          val currentListenerId: Int = call.argument("currentListenerId")!!
 
-        // Prepare a timer like self calling task
-        val handler = Handler()
-        callbackById[currentListenerId] = object : Runnable {
-          override fun run() {
-            if (callbackById.containsKey(currentListenerId)) {
-              val args: MutableMap<String, Any> = HashMap()
-              args["id"] = currentListenerId
-              args["args"] = "Hello listener! " + System.currentTimeMillis() / 1000
-              args["msg"] = "Peer Successfully added "
+          // Prepare a timer like self calling task
+          val handler = Handler()
+          callbackById[currentListenerId] = object : Runnable {
+            override fun run() {
+              if (callbackById.containsKey(currentListenerId)) {
+                val args: MutableMap<String, Any> = HashMap()
+                args["id"] = currentListenerId
+                args["args"] = "Hello listener! " + System.currentTimeMillis() / 1000
+                args["msg"] = "Peer Successfully added "
 
-              // Send some value to callback
-              channel.invokeMethod("callListener", args)
+                // Send some value to callback
+                channel.invokeMethod("callListener", args)
+              }
+              handler.postDelayed(this, 1000)
             }
-            handler.postDelayed(this, 1000)
           }
-        }
 
-        // Run task
-        callbackById[currentListenerId]?.let { handler.postDelayed(it, 500) }
+          // Run task
+          callbackById[currentListenerId]?.let { handler.postDelayed(it, 500) }
+        }
 
         result.success("Peer Successfully added")
       } else {
@@ -290,8 +264,8 @@ class BeacondartPlugin :
         return
       }
     } catch (e: Exception) {
-      result.error("exception", e.message, e.stackTrace)
-      // onError(e)
+      // result.error("exception", e.message, e)
+      onError(e)
     }
   }
 
@@ -541,13 +515,9 @@ class BeacondartPlugin :
       activity.setter.call(this, activity as FlutterActivity)
     }
 
-    // activity = activity as FlutterActivity
+
     eventChannel = EventChannel(messenger, CHANNEL_EVENT)
     eventChannel!!.setStreamHandler(this)
-    //eventReqChannel = EventChannel(messenger, CHANNEL_REQ_EVENT)
-    //eventRespChannel = EventChannel(messenger, CHANNEL_RESP_EVENT)
-    //eventReqChannel!!.setStreamHandler(this)
-    //eventRespChannel!!.setStreamHandler(this)
     this.applicationContext = applicationContext
     channel = MethodChannel(messenger, CHANNEL)
     channel.setMethodCallHandler(this)
@@ -696,7 +666,6 @@ class BeacondartPlugin :
     // this.lifecycleScope.launch {
     viewModel.viewModelScope.launch {
       try {
-        // activity!!.runOnUiThread { beaconOperationStream!!.success(response) }
 
         viewModel.beaconClient?.respond(response)
         // pendingResult?.success(response)
@@ -839,14 +808,14 @@ class BeacondartPlugin :
   fun cancelListeningFunc(args: Any, result: Result) {
     // Get callback id
     var arguments = args as HashMap<*, *>
-    val currentListenerId: Int =  arguments["currentListenerId"]!! as Int
-    //val currentListenerId: Int =  args("currentListenerId")!! as Int
-    //val currentListenerId = args as Int
+    if(arguments != null && arguments["currentListenerId"] != null){
+      val currentListenerId: Int =  arguments["currentListenerId"]!! as Int
 
-    // Remove callback
-    callbackById.remove(currentListenerId)
+      // Remove callback
+      callbackById.remove(currentListenerId)
 
-    // Do additional stuff if required to cancel the listener
-    result.success(null)
+      // Do additional stuff if required to cancel the listener
+      result.success(null)
+    }
   }
 }

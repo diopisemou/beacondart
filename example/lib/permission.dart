@@ -32,6 +32,9 @@ class _PermissionPageState extends State<PermissionPage> {
   @override
   void initState() {
     super.initState();
+    bmw.onOperationRequest((dynamic barcode) {
+      goToDetails();
+    });
   }
 
   void goToDetails() {

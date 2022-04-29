@@ -70,11 +70,22 @@ class _MyAppState extends State<MyApp> {
       _platformVersion = platformVersion;
     });
     bmw.onInit();
-    bmw.getOperationStreamReceiver()?.listen((barcode) {
-      var requestMap = json.decode(barcode);
-      if (requestMap['type'] == "tezos_permission_request") {
-        goToPermission(requestMap);
+
+    var stop = await bmw.onConnectToDApp((response) async {
+      var msgVal = response['msg'].toString();
+      if (msgVal.compareTo('Beacon Connection Succesfully Initiated') == 0) {
+        bmw.stopListening();
       }
+    });
+
+    // bmw.getOperationStreamReceiver()?.listen((barcode) {
+    //   var requestMap = json.decode(barcode);
+    //   if (requestMap['type'] == "tezos_permission_request") {
+    //     goToPermission(requestMap);
+    //   }
+    // });
+    bmw.onPermissionRequest((dynamic barcode) {
+      goToPermission(barcode);
     });
   }
 
@@ -134,23 +145,34 @@ class _MyAppState extends State<MyApp> {
       var params = await getParamsMap(qrcodeScanRes);
       var msgVal = '';
       var runNext = false;
-      var stop = await bmw.onConnectToDApp((response) async {
-        var msgVal = response['msg'].toString();
-        if (msgVal.compareTo('Beacon Connection Succesfully Initiated') == 0) {
-          runNext = true;
+      // var stop = await bmw.onConnectToDApp((response) async {
+      //   var msgVal = response['msg'].toString();
+      //   if (msgVal.compareTo('Beacon Connection Succesfully Initiated') == 0) {
+      //     runNext = true;
 
-          var stopPeer = await bmw.addPeer(params, (response) async {
-            msgVal = response['msg'].toString();
-            if (msgVal.compareTo('Peer Successfully added') == 0) {
-              bmw.stopListening();
-            }
-          });
-          stopPeer();
+      //     var stopPeer = await bmw.addPeer(params, (response) async {
+      //       msgVal = response['msg'].toString();
+      //       if (msgVal.compareTo('Peer Successfully added') == 0 ||
+      //           msgVal.compareTo('Beacon Connection Succesfully Initiated') == 0) {
+      //         bmw.stopListening();
+      //       }
+      //     });
+      //     stopPeer();
 
+      //     bmw.stopListening();
+      //   }
+      // });
+      var stopPeer = await bmw.addPeer(params, (response) async {
+        msgVal = response['msg'].toString();
+        if (msgVal.compareTo('Peer Successfully added') == 0 ||
+            msgVal.compareTo('Beacon Connection Succesfully Initiated') == 0) {
           bmw.stopListening();
         }
       });
-      stop();
+      stopPeer();
+
+      bmw.stopListening();
+      stopPeer();
 
       // if (runNext) {
       //   var stopPeer = await bmw.addPeer(params, (response) async {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:beacondart/p2ppeer.dart';
 import 'package:flutter/src/foundation/print.dart';
 import 'package:flutter/services.dart';
@@ -91,7 +92,8 @@ class BeaconWalletClient {
     }
   }
 
-  onBeaconRequest(void Function(dynamic response) responder) async {
+  //onBeaconRequest(void Function(dynamic response) responder) async {
+  onBeaconRequest(MultiUseCallback responder) async {
     _channel.setMethodCallHandler(methodCallHandler);
     int currentListenerId = nextCallbackId++;
     callbacksById[currentListenerId] = responder;
@@ -109,19 +111,17 @@ class BeaconWalletClient {
     }
   }
 
-  //addPeers(Map<String, dynamic> dApp) async {}
-  //removePeer(Map<String, dynamic> dApp) async {}
-  //getPeers() async {}
-
-  // addPeers(Map<String, dynamic> dApp, void Function(dynamic response) responder) async {
   addPeer(Map<String, dynamic> dApp, MultiUseCallback responder) async {
     try {
       _channel.setMethodCallHandler(methodCallHandler);
-      //int currentListenerId = nextCallbackId++;
-      //callbacksById[currentListenerId] = responder;
+      int? currentListenerId;
+      if (responder != null) {
+        int currentListenerId = nextCallbackId++;
+        callbacksById[currentListenerId] = responder;
+      }
       Map params = <String, dynamic>{
         ...dApp,
-        //'currentListenerId': currentListenerId,
+        'currentListenerId': currentListenerId,
       };
       await _channel.invokeMethod("addPeerFunc", params);
       peers.add(P2pPeer.fromMap(dApp));
@@ -133,7 +133,7 @@ class BeaconWalletClient {
 
       return () {
         _channel.invokeMethod("cancelListeningFunc", params);
-        //callbacksById.remove(currentListenerId);
+        callbacksById.remove(currentListenerId);
       };
     } on PlatformException catch (e) {
       debugPrint(e.toString());
@@ -142,11 +142,12 @@ class BeaconWalletClient {
     }
   }
 
-  getPeer(MultiUseCallback responder) async {
+  getPeer(String? id, MultiUseCallback responder) async {
     _channel.setMethodCallHandler(methodCallHandler);
     int currentListenerId = nextCallbackId++;
     callbacksById[currentListenerId] = responder;
     Map params = <String, dynamic>{
+      'id': id ?? '',
       'currentListenerId': currentListenerId,
     };
 
@@ -158,14 +159,21 @@ class BeaconWalletClient {
     };
   }
 
-  Future<List<P2pPeer>> getPeers() async {
-    dynamic? result = await _channel.invokeMethod('getPeersFunc');
+  Future<List<P2pPeer>> getPeers(MultiUseCallback responder) async {
+    _channel.setMethodCallHandler(methodCallHandler);
+    int currentListenerId = nextCallbackId++;
+    callbacksById[currentListenerId] = responder;
+    Map params = <String, dynamic>{
+      'currentListenerId': currentListenerId,
+    };
+    dynamic? result = await _channel.invokeMethod('getPeersFunc', params);
     _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
     return result;
   }
 
-  Future<List<P2pPeer>> removePeer(String? id) async {
-    Map params = <String, String>{
+  Future<List<P2pPeer>> removePeer(Map<String, dynamic>? dApp, String? id) async {
+    Map params = <String, dynamic>{
+      'peer': dApp,
       'id': id ?? '',
     };
     dynamic? result = await _channel.invokeMethod('removePeerFunc', params);
@@ -284,6 +292,60 @@ class BeaconWalletClient {
       debugPrint(e.toString());
     } on Exception catch (e) {
       debugPrint("Erreur subscribeToRequest");
+      return false;
+    }
+  }
+
+  onOperationRequest(MultiUseCallback responder) async {
+    try {
+      _channel.setMethodCallHandler(methodCallHandler);
+      int currentListenerId = nextCallbackId++;
+      callbacksById[currentListenerId] = responder;
+      Map params = <String, dynamic>{
+        'currentListenerId': currentListenerId,
+      };
+      _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
+      _onOperationReceiver?.listen((event) {
+        if (event['tyoe'] == "tezos_operation_request") {
+          responder!(event);
+        }
+      });
+      return () {
+        _channel.invokeMethod("cancelListeningFunc", params);
+        callbacksById.remove(currentListenerId);
+      };
+    } on PlatformException catch (e) {
+      debugPrint(e.toString());
+    } on Exception catch (e) {
+      debugPrint("Erreur onOperationRequest");
+      return false;
+    }
+  }
+
+  onPermissionRequest(MultiUseCallback responder) async {
+    try {
+      _channel.setMethodCallHandler(methodCallHandler);
+      int currentListenerId = nextCallbackId++;
+      callbacksById[currentListenerId] = responder;
+      Map params = <String, dynamic>{
+        'currentListenerId': currentListenerId,
+      };
+      _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
+      _onOperationReceiver?.listen((event) {
+        var eventMap = json.decode(event);
+        //tezos_permission_request
+        if (eventMap['type'] == "tezos_permission_request") {
+          responder!(eventMap);
+        }
+      });
+      return () {
+        _channel.invokeMethod("cancelListeningFunc", params);
+        callbacksById.remove(currentListenerId);
+      };
+    } on PlatformException catch (e) {
+      debugPrint(e.toString());
+    } on Exception catch (e) {
+      debugPrint("Erreur onOperationRequest");
       return false;
     }
   }
