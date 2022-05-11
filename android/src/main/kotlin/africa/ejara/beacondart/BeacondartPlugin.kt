@@ -260,20 +260,14 @@ class BeacondartPlugin :
           // Run task
           callbackById[currentListenerId]?.let { handler.postDelayed(it, 500) }
         }
-
         result.success("Peer Successfully added")
 
-
-        viewModel.subscribeToRequests().observe(this) { result ->
-          result.getOrNull()?.let { onBeaconRequest(it) }
-          result.exceptionOrNull()?.let { onError(it) }
-        }
       } else {
         result.error("error", "Please set id, name, publicKey, relayServer and version", null)
         return
       }
     } catch (e: Exception) {
-      // result.error("exception", e.message, e)
+      //result.error("exception", e.message, e)
       onError(e)
     }
   }
@@ -701,7 +695,7 @@ class BeacondartPlugin :
   private fun onError(exception: Throwable) {
     exception.printStackTrace()
     beaconOperationStream?.error("error - exception", exception.message, exception)
-    pendingResult?.error("error", exception.message, null)
+    pendingResult?.error("error", exception.message, exception)
   }
 
   data class State(

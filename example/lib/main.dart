@@ -71,12 +71,6 @@ class _MyAppState extends State<MyApp> {
     });
     bmw.onInit();
 
-    // bmw.getOperationStreamReceiver()?.listen((barcode) {
-    //   var requestMap = json.decode(barcode);
-    //   if (requestMap['type'] == "tezos_permission_request") {
-    //     goToPermission(requestMap);
-    //   }
-    // });
     bmw.onPermissionRequest((dynamic barcode) {
       goToPermission(barcode);
     });
@@ -88,7 +82,7 @@ class _MyAppState extends State<MyApp> {
       }
     });
     stop();
-    //bmw.stopListening();
+    bmw.stopListening();
   }
 
   void goToPermission(dynamic requestMap) {
@@ -149,28 +143,14 @@ class _MyAppState extends State<MyApp> {
       var params = await getParamsMap(qrcodeScanRes);
       var msgVal = '';
 
-      // var stop = await bmw.onConnectToDApp((response) async {
-      //   var msgVal = response['msg'].toString();
-      //   if (msgVal.compareTo('Beacon Connection Succesfully Initiated') == 0) {
-      //     var stopPeer = await bmw.addPeer(params, (response) {
-      //       msgVal = response['msg'].toString();
-      //       if (msgVal.compareTo('Peer Successfully added') == 0) {
-      //         bmw.stopListening();
-      //       }
-      //     });
-      //     bmw.stopListening();
-      //   }
-      // });
-
       var stopPeer = await bmw.addPeer(params, (response) {
         msgVal = response['msg'].toString();
         if (msgVal.compareTo('Peer Successfully added') == 0) {
           bmw.stopListening();
         }
       });
-      //bmw.stopListening();
       stopPeer();
-      //bmw.stopListening();
+      bmw.stopListening();
     } on PlatformException {
       qrcodeScanRes = "Error lors du scan";
     } on Exception {
