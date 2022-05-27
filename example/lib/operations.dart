@@ -79,9 +79,9 @@ class _OperationsPageState extends State<OperationsPage> {
               GestureDetector(
                   onTap: () async {
                     bmw.onRejectConnectToDApp((response) async {
-                      setState(() {
-                        debugPrint(response.toString());
-                      });
+                      // setState(() {
+                      //   debugPrint(response.toString());
+                      // });
                     });
                     Navigator.of(context).pop();
                   },
@@ -99,9 +99,10 @@ class _OperationsPageState extends State<OperationsPage> {
               GestureDetector(
                   onTap: () async {
                     bmw.onConfirmConnectToDApp((response) async {
-                      setState(() {
-                        debugPrint(response.toString());
-                      });
+                      debugPrint(response.toString());
+                      // setState(() {
+                      //   debugPrint(response.toString());
+                      // });
                       bmw.stopListening();
                     });
                     goToDetails();

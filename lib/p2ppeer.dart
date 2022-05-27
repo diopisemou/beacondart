@@ -100,3 +100,42 @@ abstract class Peer {
   Peer paired();
   Peer removed();
 }
+
+class AppMetadata {
+  String? senderId;
+  String? name;
+  String? icon = '';
+  String? blockchainIdentifier = '';
+  String? appUrl = '';
+
+  AppMetadata(
+      {required this.senderId,
+      required this.name,
+      required this.icon,
+      required this.blockchainIdentifier,
+      required this.appUrl});
+
+  Map<String, dynamic> toMap() {
+    return {
+      'senderId': senderId,
+      'name': name,
+      'icon': icon,
+      'blockchainIdentifier': blockchainIdentifier,
+      'appUrl': appUrl,
+    };
+  }
+
+  factory AppMetadata.fromMap(Map<String, dynamic> map) {
+    return AppMetadata(
+      senderId: map['senderId'],
+      name: map['name'],
+      icon: map['icon'],
+      blockchainIdentifier: map['blockchainIdentifier'],
+      appUrl: map['appUrl'],
+    );
+  }
+
+  String toJson() => json.encode(toMap());
+
+  factory AppMetadata.fromJson(String source) => AppMetadata.fromMap(json.decode(source));
+}

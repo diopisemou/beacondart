@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:beacondart/beacondart.dart';
+import 'package:beacondart/tezos_reponse.dart';
+import 'package:beacondart/tezos_request.dart';
 import 'package:beacondart_example/operations.dart';
 import 'package:flutter/material.dart';
 
@@ -43,8 +45,18 @@ class _DetailsPageState extends State<DetailsPage> {
     bmw.getOperationStreamReceiver()?.listen((barcode) {
       var requestMap = json.decode(barcode);
       if (requestMap['type'] == "tezos_operation_request") {
-        goToOperations(requestMap);
+        goToOperations(OperationTezosRequest.fromJson(requestMap));
       }
+      if (requestMap['type'] == "tezos_permission_response") {
+        var response = PermissionTezosResponse.fromJson(requestMap);
+        if (response.account!['publicKey'] != '' && response.account!['address'] != '') {
+          goToOperations(response);
+        }
+      }
+    });
+
+    bmw.onPermissionRequest((dynamic barcode) {
+      debugPrint("onPermissionRequest: $barcode");
     });
   }
 
@@ -56,8 +68,8 @@ class _DetailsPageState extends State<DetailsPage> {
           dappImageUrl: bmw.getDappImageUrl() ?? '',
           dappName: bmw.getDappName() ?? '',
           dappId: bmw.getDappName() ?? '',
-          dappBlockChain: requestMap['appMetadata']['blockchainIdentifier'],
-          dappNetwork: requestMap['network']['type'],
+          dappBlockChain: requestMap.appMetadata['blockchainIdentifier'],
+          dappNetwork: requestMap.network['type'],
         ),
       ),
     );

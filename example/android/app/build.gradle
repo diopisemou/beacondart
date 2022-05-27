@@ -60,6 +60,7 @@ android {
             signingConfig signingConfigs.debug
         }
     }
+    namespace 'africa.ejara.beacondart_example'
 }
 
 flutter {

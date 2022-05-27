@@ -75,12 +75,7 @@ class BeacondartPlugin :
 
   private var eventChannel: EventChannel? = null
 
-  /**
-   * V2 embedding
-   *
-   * @param activity
-   * @param registrar
-   */
+
   private var pluginBinding: FlutterPluginBinding? = null
   private var activityBinding: ActivityPluginBinding? = null
   private var applicationContext: Application? = null
@@ -93,9 +88,9 @@ class BeacondartPlugin :
   // Callbacks
   private val callbackById: MutableMap<Int, Runnable> = HashMap()
 
-  private fun BeacondartPlugin(activity: FlutterActivity, registrar: Registrar) {
-    BeacondartPlugin.activity = activity
-  }
+//  private fun BeacondartPlugin(activity: FlutterActivity, registrar: Registrar) {
+//    BeacondartPlugin.activity = activity
+//  }
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, CHANNEL)
@@ -108,7 +103,7 @@ class BeacondartPlugin :
       createPluginSetup(
           pluginBinding!!.binaryMessenger,
           pluginBinding!!.applicationContext as Application,
-          activityBinding!!.getActivity(),
+          activityBinding!!.activity,
           null,
           activityBinding!!
       )
@@ -179,7 +174,7 @@ class BeacondartPlugin :
     onAttachedToActivity(binding)
   }
 
-  fun onInitFunc( @NonNull result: Result)
+  private fun onInitFunc(@NonNull result: Result)
   {
     try {
       viewModel.onInit().runCatching {}
@@ -202,7 +197,7 @@ class BeacondartPlugin :
     }
   }
 
-  fun getPeerFunc(@NonNull call: MethodCall,  @NonNull result: Result)
+  private fun getPeerFunc(@NonNull call: MethodCall, @NonNull result: Result)
   {
     try {
       val id: String? = call.argument("id")
@@ -214,7 +209,7 @@ class BeacondartPlugin :
     }
   }
 
-  fun addPeerFunc(@NonNull call: MethodCall,  @NonNull result: Result)
+  private fun addPeerFunc(@NonNull call: MethodCall, @NonNull result: Result)
   {
     try {
       // val peer = call.arguments as Map<String, Any>
@@ -317,8 +312,8 @@ class BeacondartPlugin :
               val args: MutableMap<String, Any> = HashMap()
               args["id"] = currentListenerId
               args["args"] = "Hello listener! " + System.currentTimeMillis() / 1000
-              args["msg"] = "Beacon Connection Succesfully Initiated"
-              args["req"] = "Beacon Connection Succesfully Initiated"
+              args["msg"] = "Beacon Connection Successfully Initiated"
+              args["req"] = "Beacon Connection Successfully Initiated"
 
               // Send some value to callback
               channel.invokeMethod("callListener", args)
@@ -343,7 +338,7 @@ class BeacondartPlugin :
     }
   }
 
-  fun onDisconnectToDAppFunc(@NonNull call: MethodCall,  @NonNull result: Result)
+  private fun onDisconnectToDAppFunc(@NonNull call: MethodCall, @NonNull result: Result)
   {
     try {
       val id: String? = call.argument("id")
@@ -362,15 +357,16 @@ class BeacondartPlugin :
     }
   }
 
-  fun onConfirmConnectToDAppFunc(@NonNull call: MethodCall,  @NonNull result: Result)
+  private fun onConfirmConnectToDAppFunc(@NonNull call: MethodCall, @NonNull result: Result)
   {
     try {
-      viewModel.subscribeToRequests().observe(this) { result ->
-        result.getOrNull()?.let { onAcceptBeaconRequest(it) /*onBeaconRequest(it)*/ }
-        result.exceptionOrNull()?.let { onError(it) }
+      viewModel.subscribeToRequests().observe(this) { results ->
+        results.getOrNull()?.let { onAcceptBeaconRequest(it, call.argument("tezosAccount")!!, call.argument("tezosAccountAddress")!! ) /*onBeaconRequest(it)*/ }
+        results.exceptionOrNull()?.let { onError(it) }
       }
 
-      viewModel.getAwaitingRequest()?.let { onAcceptBeaconRequest(it) }
+      viewModel.getAwaitingRequest()?.let { onAcceptBeaconRequest(it,
+        call.argument("tezosAccount")!!, call.argument("tezosAccountAddress")!! ) }
 
       val currentListenerId: Int = call.argument("currentListenerId")!!
       // Prepare a timer like self calling task
@@ -381,8 +377,8 @@ class BeacondartPlugin :
             val args: MutableMap<String, Any> = HashMap()
             args["id"] = currentListenerId
             args["args"] = "Hello listener! " + System.currentTimeMillis() / 1000
-            args["msg"] = "Connection Request Accepted Succesfully"
-            args["req"] = "Connection Request Accepted Succesfully"
+            args["msg"] = "Connection Request Accepted Successfully"
+            args["req"] = "Connection Request Accepted Successfully"
 
             // Send some value to callback
             channel.invokeMethod("callListener", args)
@@ -400,7 +396,7 @@ class BeacondartPlugin :
     }
   }
 
-  fun onRejectConnectToDAppFunc(@NonNull call: MethodCall,  @NonNull result: Result)
+  private fun onRejectConnectToDAppFunc(@NonNull call: MethodCall, @NonNull result: Result)
   {
     try {
       viewModel.subscribeToRequests().observe(this) { result ->
@@ -438,7 +434,7 @@ class BeacondartPlugin :
     }
   }
 
-  fun onSubscribeToRequestFunc(@NonNull call: MethodCall,  @NonNull result: Result)
+  private fun onSubscribeToRequestFunc(@NonNull call: MethodCall, @NonNull result: Result)
   {
     try {
       if (viewModel.beaconClient != null) {
@@ -447,8 +443,8 @@ class BeacondartPlugin :
       } else {
         viewModel.onInit()
 
-        viewModel.beginBeacon().observe(this) { result ->
-          result.getOrNull()?.let {
+        viewModel.beginBeacon().observe(this) { results ->
+          results.getOrNull()?.let {
             onBeaconRequest(it)
 
             val currentListenerId: Int = call.argument("currentListenerId")!!
@@ -470,7 +466,7 @@ class BeacondartPlugin :
             }
 
           }
-          result.exceptionOrNull()?.let { onError(it) }
+          results.exceptionOrNull()?.let { onError(it) }
         }
 
         if (viewModel.beaconClient == null) {
@@ -487,11 +483,11 @@ class BeacondartPlugin :
   {
     try {
       viewModel.subscribeToRequests().observe(this) { result ->
-        result.getOrNull()?.let { onAcceptBeaconRequest(it)  }
+        result.getOrNull()?.let { onAcceptBeaconRequest(it, call.argument("tezosAccount")!!, call.argument("tezosAccountAddress")!! )  }
         result.exceptionOrNull()?.let { onError(it) }
       }
 
-      viewModel.getAwaitingRequest()?.let { onAcceptBeaconRequest(it) }
+      viewModel.getAwaitingRequest()?.let { onAcceptBeaconRequest(it, call.argument("tezosAccount")!!, call.argument("tezosAccountAddress")!! ) }
 
     } catch (e: Exception) {
 
@@ -548,7 +544,7 @@ class BeacondartPlugin :
     createPluginSetup(
         pluginBinding!!.binaryMessenger,
         pluginBinding!!.applicationContext as Application,
-        activityBinding!!.getActivity(),
+        activityBinding!!.activity,
         null,
         activityBinding!!
     )
@@ -567,7 +563,9 @@ class BeacondartPlugin :
     lifecycle = null
     channel.setMethodCallHandler(null)
     eventChannel!!.setStreamHandler(null)
-    channel = MethodChannel(null, "")
+    // channel = MethodChannel( BinaryMessenger(), "")
+    pluginBinding = null
+    channel = MethodChannel(pluginBinding!!.binaryMessenger, "")
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
       applicationContext!!.unregisterActivityLifecycleCallbacks(observer)
     }
@@ -591,9 +589,8 @@ class BeacondartPlugin :
     }
   }
 
-  private fun onAcceptBeaconRequest(request: BeaconRequest) {
+  private fun onAcceptBeaconRequest(request: BeaconRequest, tezosAccount: String, tezosAccountAddress: String) {
     val jsonReq = json.encodeToString(request.toJson(json))
-
     val response =
         when (request) {
           is PermissionSubstrateRequest ->
@@ -601,16 +598,19 @@ class BeacondartPlugin :
                   request,
                   request.networks.map { BeacondartViewModel.exampleSubstrateAccount(it) }
               )
+//          is PermissionTezosRequest ->
+//              PermissionTezosResponse.from( request, BeacondartViewModel.exampleTezosAccount(request.network))
           is PermissionTezosRequest ->
-              PermissionTezosResponse.from( request, BeacondartViewModel.exampleTezosAccount(request.network))
+            PermissionTezosResponse.from( request, BeacondartViewModel.tezosAccount(tezosAccount, tezosAccountAddress, request.network))
+            //PermissionTezosResponse.from( request, BeacondartViewModel.tezosAccount("", "", request.network))
           is OperationTezosRequest -> OperationTezosResponse.from(request, "")
           is SignPayloadTezosRequest -> SignPayloadTezosResponse.from(request, SigningType.Raw, "")
           is BroadcastTezosRequest -> BroadcastTezosResponse.from(request, "")
           else -> ErrorBeaconResponse.from(request, BeaconError.Aborted)
         }
 
-    logInfo("beaconAccepptRequest", jsonReq)
-    logInfo("beaconAcceptReponse", response.toJson().toString())
+    logInfo("beaconAcceptRequest", jsonReq)
+    logInfo("beaconAcceptResponse", response.toJson().toString())
 
     // this.lifecycleScope.launch {
     viewModel.viewModelScope.launch {
@@ -638,8 +638,8 @@ class BeacondartPlugin :
         else -> ErrorBeaconResponse.from(request, BeaconError.Aborted)
       }
 
-    logInfo("beaconAccepptRequest", jsonReq)
-    logInfo("beaconAcceptReponse", response.toJson().toString())
+    logInfo("beaconAcceptRequest", jsonReq)
+    logInfo("beaconAcceptResponse", response.toJson().toString())
 
     // this.lifecycleScope.launch {
     viewModel.viewModelScope.launch {
@@ -667,7 +667,7 @@ class BeacondartPlugin :
         }
 
     logInfo("beaconRejectRequest", jsonReq)
-    logInfo("beaconRejectReponse", response.toJson().toString())
+    logInfo("beaconRejectResponse", response.toJson().toString())
 
     // this.lifecycleScope.launch {
     viewModel.viewModelScope.launch {
@@ -746,9 +746,9 @@ class BeacondartPlugin :
     override fun onActivitySaveInstanceState(p0: Activity, p1: Bundle) {}
 
     override fun onActivityDestroyed(p0: Activity) {
-      if (thisActivity === p0 && p0.getApplicationContext() != null) {
+      if (thisActivity === p0 && p0.applicationContext != null) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-          (p0.getApplicationContext() as Application).unregisterActivityLifecycleCallbacks(this)
+          (p0.applicationContext as Application).unregisterActivityLifecycleCallbacks(this)
         }
       }
     }
@@ -811,7 +811,7 @@ class BeacondartPlugin :
     result.success(null)
   }
 
-  fun cancelListeningFunc(args: Any, result: Result) {
+  private fun cancelListeningFunc(args: Any, result: Result) {
     // Get callback id
     var arguments = args as HashMap<*, *>
     if(arguments != null && arguments["currentListenerId"] != null){

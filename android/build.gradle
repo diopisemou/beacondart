@@ -61,7 +61,7 @@ dependencies {
 
     def withoutJna = { exclude group: "net.java.dev.jna" }
     
-    def beacon_version = "3.1.0"
+    def beacon_version = "3.1.1"
 
     
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"

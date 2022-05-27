@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'package:beacondart/tezos_reponse.dart';
+import 'package:beacondart/tezos_request.dart';
+import 'package:beacondart_example/operations.dart';
 import 'package:beacondart_example/permission.dart';
 import 'package:dart_bs58check/dart_bs58check.dart';
 import 'package:flutter/material.dart';
@@ -85,21 +88,54 @@ class _MyAppState extends State<MyApp> {
     bmw.stopListening();
   }
 
-  void goToPermission(dynamic requestMap) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => PermissionPage(
-          dappAddress: bmw.getDappAddress() ?? '',
-          dappImageUrl: bmw.getDappImageUrl() ?? '',
-          dappName: bmw.getDappName() ?? '',
-          dappId: bmw.getDappName() ?? '',
-          dappBlockChain: requestMap['appMetadata']['blockchainIdentifier'],
-          dappNetwork: requestMap['network']['type'],
-          dappScope:
-              requestMap['scopes'].fold('initialValue', (previousValue, element) => previousValue + ' ' + element),
+  // void goToPermission(dynamic requestMap) {
+  //   Navigator.of(context).push(
+  //     MaterialPageRoute(
+  //       builder: (context) => PermissionPage(
+  //         dappAddress: bmw.getDappAddress() ?? '',
+  //         dappImageUrl: bmw.getDappImageUrl() ?? '',
+  //         dappName: bmw.getDappName() ?? '',
+  //         dappId: bmw.getDappName() ?? '',
+  //         dappBlockChain: requestMap['appMetadata']['blockchainIdentifier'],
+  //         dappNetwork: requestMap['network']['type'],
+  //         dappScope:
+  //             requestMap['scopes'].fold('initialValue', (previousValue, element) => previousValue + ' ' + element),
+  //       ),
+  //     ),
+  //   );
+  // }
+
+  void goToPermission(requestMap) {
+    if (requestMap.runtimeType == PermissionTezosRequest) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => PermissionPage(
+            dappAddress: bmw.getDappAddress() ?? '',
+            dappImageUrl: bmw.getDappImageUrl() ?? '',
+            dappName: bmw.getDappName() ?? '',
+            dappId: bmw.getDappName() ?? '',
+            dappBlockChain: requestMap.appMetadata.blockchainIdentifier,
+            dappNetwork: requestMap.network['type'],
+            dappScope:
+                requestMap.scopes.fold('initialValue', (previousValue, element) => previousValue + ' ' + element),
+          ),
         ),
-      ),
-    );
+      );
+    }
+    if (requestMap.runtimeType == OperationTezosRequest) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => OperationsPage(
+            dappAddress: bmw.getDappAddress() ?? '',
+            dappImageUrl: bmw.getDappImageUrl() ?? '',
+            dappName: bmw.getDappName() ?? '',
+            dappId: bmw.getDappName() ?? '',
+            dappBlockChain: requestMap.appMetadata.blockchainIdentifier,
+            dappNetwork: requestMap.network['type'],
+          ),
+        ),
+      );
+    }
   }
 
   Future<Map<String, dynamic>> getParamsMap(String qrCodeString) {
@@ -176,7 +212,7 @@ class _MyAppState extends State<MyApp> {
                 //Scan QrCode
 
                 List<dynamic> array = await readDAppFromQrCodeV2();
-                if (array[1] == '-1' || array[0] == false) {
+                if ((array[1] == '-1' || array[0] == false) && mounted) {
                   setState(() {
                     isInvalidDappError = true;
                   });

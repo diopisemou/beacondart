@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:beacondart/p2ppeer.dart';
+import 'package:beacondart/tezos_reponse.dart';
+import 'package:beacondart/tezos_request.dart';
 import 'package:flutter/src/foundation/print.dart';
 import 'package:flutter/services.dart';
 
@@ -192,6 +194,10 @@ class BeaconWalletClient {
       callbacksById[currentListenerId] = responder;
       Map params = <String, dynamic>{
         'currentListenerId': currentListenerId,
+        //'tezosAccountAddress': 'tz1N6Dqo9PuWga38GjdfPXg1aSowbymWinGK',
+        //'tezosAccount': 'edpkvR6cRnbyA2gsLvMnjwnJ7rH3vUpN9ULcdA6mtJZrkVEeiN6EVe'
+        'tezosAccountAddress': 'tz1N6Dqo9PuWga38GjdfPXg1aSowbymWinGKe',
+        'tezosAccount': 'edpkvR6cRnbyA2gsLvMnjwnJ7rH3vUpN9ULcdA6mtJZrkVEeiN6EVeee'
       };
       var result = await _channel.invokeMethod('onConfirmConnectToDAppFunc', params);
       return () {
@@ -338,7 +344,13 @@ class BeaconWalletClient {
         var eventMap = json.decode(event);
         //tezos_permission_request
         if (eventMap['type'] == "tezos_permission_request") {
-          responder!(eventMap);
+          responder!(PermissionTezosRequest.fromJson(event));
+        }
+        if (eventMap['type'] == "tezos_permission_response") {
+          responder!(PermissionTezosResponse.fromJson(event));
+        }
+        if (eventMap['type'] == "tezos_operation_request") {
+          responder!(OperationTezosRequest.fromJson(event));
         }
       });
       return () {
