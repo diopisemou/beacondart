@@ -187,7 +187,7 @@ class BeaconWalletClient {
     return result;
   }
 
-  onConfirmConnectToDApp(MultiUseCallback responder) async {
+  onConfirmConnectToDApp(String tezosAccountAddress, String tezosAccount, MultiUseCallback responder) async {
     try {
       _channel.setMethodCallHandler(methodCallHandler);
       int currentListenerId = nextCallbackId++;
@@ -196,8 +196,8 @@ class BeaconWalletClient {
         'currentListenerId': currentListenerId,
         //'tezosAccountAddress': 'tz1N6Dqo9PuWga38GjdfPXg1aSowbymWinGK',
         //'tezosAccount': 'edpkvR6cRnbyA2gsLvMnjwnJ7rH3vUpN9ULcdA6mtJZrkVEeiN6EVe'
-        'tezosAccountAddress': 'tz1N6Dqo9PuWga38GjdfPXg1aSowbymWinGKe',
-        'tezosAccount': 'edpkvR6cRnbyA2gsLvMnjwnJ7rH3vUpN9ULcdA6mtJZrkVEeiN6EVeee'
+        'tezosAccountAddress': tezosAccountAddress, //'tz1N6Dqo9PuWga38GjdfPXg1aSowbymWinGKe',
+        'tezosAccount': tezosAccount, //'edpkvR6cRnbyA2gsLvMnjwnJ7rH3vUpN9ULcdA6mtJZrkVEeiN6EVeee'
       };
       var result = await _channel.invokeMethod('onConfirmConnectToDAppFunc', params);
       return () {
