@@ -187,17 +187,18 @@ class BeaconWalletClient {
     return result;
   }
 
-  onConfirmConnectToDApp(String tezosAccountAddress, String tezosAccount, MultiUseCallback responder) async {
+  onConfirmConnectToDApp(String accountAddress, String accountPubKey, bool isBase64, MultiUseCallback responder) async {
     try {
       _channel.setMethodCallHandler(methodCallHandler);
       int currentListenerId = nextCallbackId++;
       callbacksById[currentListenerId] = responder;
       Map params = <String, dynamic>{
         'currentListenerId': currentListenerId,
-        //'tezosAccountAddress': 'tz1N6Dqo9PuWga38GjdfPXg1aSowbymWinGK',
-        //'tezosAccount': 'edpkvR6cRnbyA2gsLvMnjwnJ7rH3vUpN9ULcdA6mtJZrkVEeiN6EVe'
-        'tezosAccountAddress': tezosAccountAddress, //'tz1N6Dqo9PuWga38GjdfPXg1aSowbymWinGKe',
-        'tezosAccount': tezosAccount, //'edpkvR6cRnbyA2gsLvMnjwnJ7rH3vUpN9ULcdA6mtJZrkVEeiN6EVeee'
+        //'accountAddress': 'tz1N6Dqo9PuWga38GjdfPXg1aSowbymWinGK',
+        //'accountPubKey': 'edpkvR6cRnbyA2gsLvMnjwnJ7rH3vUpN9ULcdA6mtJZrkVEeiN6EVe'
+        'accountAddress': accountAddress,
+        'accountPubKey': accountPubKey,
+        'isBase64': isBase64,
       };
       var result = await _channel.invokeMethod('onConfirmConnectToDAppFunc', params);
       return () {

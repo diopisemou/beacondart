@@ -44,6 +44,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.lang.reflect.Method
 import kotlin.reflect.KMutableProperty
+import android.util.Base64
 
 
 /** BeacondartPlugin */
@@ -361,12 +362,12 @@ class BeacondartPlugin :
   {
     try {
       viewModel.subscribeToRequests().observe(this) { results ->
-        results.getOrNull()?.let { onAcceptBeaconRequest(it, call.argument("tezosAccount")!!, call.argument("tezosAccountAddress")!! ) /*onBeaconRequest(it)*/ }
+        results.getOrNull()?.let { onAcceptBeaconRequest(it, call.argument("accountPubKey")!!, call.argument("accountAddress")!!, call.argument("isBase64")!! ) /*onBeaconRequest(it)*/ }
         results.exceptionOrNull()?.let { onError(it) }
       }
 
       viewModel.getAwaitingRequest()?.let { onAcceptBeaconRequest(it,
-        call.argument("tezosAccount")!!, call.argument("tezosAccountAddress")!! ) }
+        call.argument("accountPubKey")!!, call.argument("accountAddress")!!, call.argument("isBase64")!! ) }
 
       val currentListenerId: Int = call.argument("currentListenerId")!!
       // Prepare a timer like self calling task
@@ -483,11 +484,11 @@ class BeacondartPlugin :
   {
     try {
       viewModel.subscribeToRequests().observe(this) { result ->
-        result.getOrNull()?.let { onAcceptBeaconRequest(it, call.argument("tezosAccount")!!, call.argument("tezosAccountAddress")!! )  }
+        result.getOrNull()?.let { onAcceptBeaconRequest(it, call.argument("accountPubKey")!!, call.argument("accountAddress")!!, call.argument("isBase64")!! )  }
         result.exceptionOrNull()?.let { onError(it) }
       }
 
-      viewModel.getAwaitingRequest()?.let { onAcceptBeaconRequest(it, call.argument("tezosAccount")!!, call.argument("tezosAccountAddress")!! ) }
+      viewModel.getAwaitingRequest()?.let { onAcceptBeaconRequest(it, call.argument("accountPubKey")!!, call.argument("accountAddress")!!, call.argument("isBase64")!! ) }
 
     } catch (e: Exception) {
 
@@ -589,19 +590,27 @@ class BeacondartPlugin :
     }
   }
 
-  private fun onAcceptBeaconRequest(request: BeaconRequest, tezosAccount: String, tezosAccountAddress: String) {
+  private fun onAcceptBeaconRequest(request: BeaconRequest, accountPubKey: String, accountAddress: String, isBase64String: Boolean) {
     val jsonReq = json.encodeToString(request.toJson(json))
+    var pubKeyAccount = ""
+    if (isBase64String)
+    {
+      pubKeyAccount = String(Base64.decode(accountPubKey,  Base64.DEFAULT), Charsets.UTF_8)
+    } else {
+      pubKeyAccount = accountPubKey
+    }
     val response =
         when (request) {
           is PermissionSubstrateRequest ->
               PermissionSubstrateResponse.from(
                   request,
-                  request.networks.map { BeacondartViewModel.exampleSubstrateAccount(it) }
+                  //request.networks.map { BeacondartViewModel.exampleSubstrateAccount(it) }
+                  request.networks.map { BeacondartViewModel.substrateAccount(accountPubKey, accountAddress, request.networks[0]) }
               )
 //          is PermissionTezosRequest ->
 //              PermissionTezosResponse.from( request, BeacondartViewModel.exampleTezosAccount(request.network))
           is PermissionTezosRequest ->
-            PermissionTezosResponse.from( request, BeacondartViewModel.tezosAccount(tezosAccount, tezosAccountAddress, request.network))
+            PermissionTezosResponse.from( request, BeacondartViewModel.tezosAccount(pubKeyAccount, accountAddress, request.network), request.scopes)
             //PermissionTezosResponse.from( request, BeacondartViewModel.tezosAccount("", "", request.network))
           is OperationTezosRequest -> OperationTezosResponse.from(request, "")
           is SignPayloadTezosRequest -> SignPayloadTezosResponse.from(request, SigningType.Raw, "")

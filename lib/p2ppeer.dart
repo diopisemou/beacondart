@@ -2,20 +2,21 @@ import 'dart:convert';
 
 class P2pPeer extends Peer {
   @override
-  String? id;
+  late String? id;
   @override
-  String? name;
+  late String? name;
   @override
-  String publicKey;
-  String relayServer;
+  late String publicKey;
+  late String relayServer;
   @override
-  String version = "1";
-  String? icon;
-  String? appUrl;
+  late String version = "1";
+  late String icon;
+  late String? appUrl;
+  late bool isDappConnected = false;
   @override
-  bool isPaired = false;
+  late bool isPaired = false;
   @override
-  bool isRemoved = false;
+  late bool isRemoved = false;
 
   P2pPeer(
       {required this.id,
@@ -25,6 +26,7 @@ class P2pPeer extends Peer {
       required this.version,
       required this.icon,
       required this.appUrl,
+      this.isDappConnected = false,
       this.isPaired = false,
       this.isRemoved = false});
 
@@ -37,6 +39,7 @@ class P2pPeer extends Peer {
       'version': version,
       'icon': icon,
       'appUrl': appUrl,
+      'isDappConnected': isDappConnected,
       'isPaired': isPaired,
       'isRemoved': isRemoved,
     };
@@ -51,6 +54,7 @@ class P2pPeer extends Peer {
         version: map['version'],
         icon: map['icon'] ?? '',
         appUrl: map['appUrl'],
+        isDappConnected: map['isDappConnected'] ?? false,
         isPaired: map['isPaired'] ?? false,
         isRemoved: map['isRemoved'] ?? false);
   }
@@ -58,6 +62,19 @@ class P2pPeer extends Peer {
   String toJson() => json.encode(toMap());
 
   factory P2pPeer.fromJson(String source) => P2pPeer.fromMap(json.decode(source));
+
+  Peer connected() {
+    return P2pPeer(
+      id: id,
+      name: name,
+      publicKey: publicKey,
+      relayServer: relayServer,
+      version: version,
+      icon: icon,
+      appUrl: appUrl,
+      isDappConnected: true,
+    );
+  }
 
   @override
   Peer paired() {
@@ -96,6 +113,7 @@ abstract class Peer {
 
   bool isPaired = false;
   bool isRemoved = false;
+  bool isDappConnected = false;
 
   Peer paired();
   Peer removed();

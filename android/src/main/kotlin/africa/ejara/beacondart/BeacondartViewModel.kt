@@ -47,7 +47,8 @@ class BeacondartViewModel : ViewModel() {
     suspend fun startBeacon(): LiveData<Result<BeaconRequest>> = liveData {
         try {
             beaconClient = BeaconWalletClient("Ejara") {
-                support(tezos(), substrate())
+                //support(tezos(), substrate())
+                support(tezos())
                 use(p2pMatrix())
                 ignoreUnsupportedBlockchains = true
             }
@@ -65,7 +66,8 @@ class BeacondartViewModel : ViewModel() {
     fun beginBeacon(): LiveData<Result<BeaconRequest>> = liveData {
         try {
             beaconClient = BeaconWalletClient("Ejara") {
-                support(tezos(), substrate())
+                //support(tezos(), substrate())
+                support(tezos())
                 use(p2pMatrix())
                 ignoreUnsupportedBlockchains = true
             }
@@ -95,30 +97,30 @@ class BeacondartViewModel : ViewModel() {
         }
     }
 
-    fun respondExample() {
+    /*fun respondExample() {
         val request = awaitingRequest ?: return
 
         viewModelScope.launch {
             val response = when (request) {
 
-                /* Tezos */
+                *//* Tezos *//*
 
                 is PermissionTezosRequest -> PermissionTezosResponse.from(request, exampleTezosAccount(request.network))
                 is OperationTezosRequest -> ErrorBeaconResponse.from(request, BeaconError.Aborted)
                 is SignPayloadTezosRequest -> ErrorBeaconResponse.from(request, TezosError.SignatureTypeNotSupported)
                 is BroadcastTezosRequest -> ErrorBeaconResponse.from(request, TezosError.BroadcastError)
 
-                /* Substrate*/
+                *//* Substrate*//*
 
                 is PermissionSubstrateRequest -> PermissionSubstrateResponse.from(request, listOf(exampleSubstrateAccount(request.networks.first())))
 
-                /* Others */
+                *//* Others *//*
                 else -> ErrorBeaconResponse.from(request, BeaconError.Unknown)
             }
             beaconClient?.respond(response)
             removeAwaitingRequest()
         }
-    }
+    }*/
 
     fun addPeer(id: String, name: String, publicKey: String, relayServer: String, version: String, icon: String, appUrl: String ) {
         val peer = P2pPeer(id = id, name = name, publicKey = publicKey,
