@@ -194,8 +194,9 @@ class BeaconWalletClient {
       callbacksById[currentListenerId] = responder;
       Map params = <String, dynamic>{
         'currentListenerId': currentListenerId,
-        //'accountAddress': 'tz1N6Dqo9PuWga38GjdfPXg1aSowbymWinGK',
-        //'accountPubKey': 'edpkvR6cRnbyA2gsLvMnjwnJ7rH3vUpN9ULcdA6mtJZrkVEeiN6EVe'
+        // 'accountAddress': 'tz1N6Dqo9PuWga38GjdfPXg1aSowbymWinGK',
+        // 'accountPubKey': 'edpkvR6cRnbyA2gsLvMnjwnJ7rH3vUpN9ULcdA6mtJZrkVEeiN6EVe',
+        // 'isBase64': false,
         'accountAddress': accountAddress,
         'accountPubKey': accountPubKey,
         'isBase64': isBase64,
@@ -306,6 +307,28 @@ class BeaconWalletClient {
     }
   }
 
+  onConfirmOperationRequest(Map reqArgs, MultiUseCallback responder) async {
+    try {
+      _channel.setMethodCallHandler(methodCallHandler);
+      int currentListenerId = nextCallbackId++;
+      callbacksById[currentListenerId] = responder;
+      Map params = <String, dynamic>{
+        'currentListenerId': currentListenerId,
+        ...reqArgs,
+      };
+      var result = await _channel.invokeMethod('onConfirmOperationRequestFunc', params);
+      return () {
+        _channel.invokeMethod("cancelListeningFunc", params);
+        callbacksById.remove(currentListenerId);
+      };
+    } on PlatformException catch (e) {
+      debugPrint(e.toString());
+    } on Exception catch (e) {
+      debugPrint("Erreur onConnectToDApp");
+      return false;
+    }
+  }
+
   onOperationRequest(MultiUseCallback responder) async {
     try {
       _channel.setMethodCallHandler(methodCallHandler);
@@ -316,8 +339,13 @@ class BeaconWalletClient {
       };
       _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
       _onOperationReceiver?.listen((event) {
-        if (event['tyoe'] == "tezos_operation_request") {
-          responder!(event);
+        var eventMap = json.decode(event);
+
+        if (eventMap['type'] == "tezos_operation_request") {
+          responder!(OperationTezosRequest.fromJson(event));
+        }
+        if (eventMap['type'] == "tezos_sign_payload_request") {
+          responder!(SignPayloadTezosRequest.fromJson(event));
         }
       });
       return () {
@@ -352,6 +380,9 @@ class BeaconWalletClient {
         }
         if (eventMap['type'] == "tezos_operation_request") {
           responder!(OperationTezosRequest.fromJson(event));
+        }
+        if (eventMap['type'] == "tezos_sign_payload_request") {
+          responder!(SignPayloadTezosRequest.fromJson(event));
         }
       });
       return () {

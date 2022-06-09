@@ -105,7 +105,8 @@ class _PermissionPageState extends State<PermissionPage> {
 
               GestureDetector(
                   onTap: () async {
-                    bmw.onConfirmConnectToDApp('tz1N6Dqo9PuWga38GjdfPXg1aSowbymWinGKe', 'edpkvR6cRnbyA2gsLvMnjwnJ7rH3vUpN9ULcdA6mtJZrkVEeiN6EVeee', (response) async {
+                    bmw.onConfirmConnectToDApp('tz1N6Dqo9PuWga38GjdfPXg1aSowbymWinGKe',
+                        'edpkvR6cRnbyA2gsLvMnjwnJ7rH3vUpN9ULcdA6mtJZrkVEeiN6EVeee', false, (response) async {
                       debugPrint(response.toString());
                       // setState(() {
                       //   debugPrint(response.toString());

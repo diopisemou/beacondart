@@ -168,6 +168,18 @@ class BeacondartViewModel : ViewModel() {
         }
     }
 
+    fun removeAllMatchingPeer(id: String, name: String) {
+
+        viewModelScope.launch {
+            val peers = beaconClient?.getPeers() // get subscribed peers
+            val dApp = peers!!.filter { it.id == id || it.name == name }
+            if (dApp != null) {
+                beaconClient?.removePeers(dApp)
+            }
+            checkForPeers()
+        }
+    }
+
     private suspend fun checkForPeers() {
         val peers = beaconClient?.getPeers()
 

@@ -190,6 +190,172 @@ class OperationTezosRequest implements BlockchainTezosRequest {
   factory OperationTezosRequest.fromJson(String source) => OperationTezosRequest.fromMap(json.decode(source));
 }
 
+class SignPayloadTezosRequest implements BlockchainTezosRequest {
+  //Map? appMetadata;
+  AppMetadata? appMetadata;
+  Map? origin;
+  Map? network;
+
+  String? signingType;
+  String? payload;
+  String? sourceAddress;
+
+  @override
+  String? blockchainIdentifier;
+
+  @override
+  String? id;
+
+  @override
+  String? senderId;
+
+  @override
+  String? type;
+
+  @override
+  String? version;
+
+  SignPayloadTezosRequest(
+      {required this.id,
+      required this.blockchainIdentifier,
+      required this.type,
+      required this.senderId,
+      required this.version,
+      this.appMetadata,
+      this.origin,
+      this.network,
+      this.signingType,
+      this.payload,
+      this.sourceAddress})
+      : super();
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'blockchainIdentifier': blockchainIdentifier,
+      'type': type,
+      'senderId': senderId,
+      'version': version,
+      'appMetadata': appMetadata!.toMap(),
+      'origin': origin,
+      'network': network,
+      'signingType': signingType,
+      'payload': payload,
+      'sourceAddress': sourceAddress,
+    };
+  }
+
+  factory SignPayloadTezosRequest.fromMap(Map<String, dynamic> map) {
+    return SignPayloadTezosRequest(
+      id: map['id'],
+      blockchainIdentifier: map['blockchainIdentifier'],
+      type: map['type'],
+      senderId: map['senderId'],
+      version: map['version'],
+      appMetadata: map['appMetadata'] != null ? AppMetadata.fromMap(map['appMetadata']) : null,
+      origin: map['origin'],
+      network: map['network'],
+      signingType: map['signingType'],
+      payload: map['payload'],
+      sourceAddress: map['sourceAddress'],
+    );
+  }
+
+  String toJson() => json.encode(toMap());
+
+  factory SignPayloadTezosRequest.fromJson(String source) => SignPayloadTezosRequest.fromMap(json.decode(source));
+}
+
+class BroadcastTezosRequest implements BlockchainTezosRequest {
+  //Map? appMetadata;
+  AppMetadata? appMetadata;
+  Map? origin;
+  Map? network;
+
+  String? accountId;
+  String? signedTransaction;
+
+  @override
+  String? blockchainIdentifier;
+
+  @override
+  String? id;
+
+  @override
+  String? senderId;
+
+  @override
+  String? type;
+
+  @override
+  String? version;
+
+  BroadcastTezosRequest(
+      {required this.id,
+      required this.blockchainIdentifier,
+      required this.type,
+      required this.senderId,
+      required this.version,
+      this.appMetadata,
+      this.origin,
+      this.network,
+      this.accountId,
+      this.signedTransaction})
+      : super();
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'blockchainIdentifier': blockchainIdentifier,
+      'type': type,
+      'senderId': senderId,
+      'version': version,
+      'appMetadata': appMetadata!.toMap(),
+      'origin': origin,
+      'network': network,
+      'accountId': accountId,
+      'signedTransaction': signedTransaction
+    };
+  }
+
+  factory BroadcastTezosRequest.fromMap(Map<String, dynamic> map) {
+    return BroadcastTezosRequest(
+        id: map['id'],
+        blockchainIdentifier: map['blockchainIdentifier'],
+        type: map['type'],
+        senderId: map['senderId'],
+        version: map['version'],
+        appMetadata: map['appMetadata'] != null ? AppMetadata.fromMap(map['appMetadata']) : null,
+        origin: map['origin'],
+        network: map['network'],
+        accountId: map['accountId'],
+        signedTransaction: map['signedTransaction']);
+  }
+
+  String toJson() => json.encode(toMap());
+
+  factory BroadcastTezosRequest.fromJson(String source) => BroadcastTezosRequest.fromMap(json.decode(source));
+}
+
+// {
+//     "type": "tezos_sign_payload_request",
+//     "id": "c08326b2-d0a4-6423-9cf9-2a33521f4d45",
+//     "version": "2",
+//     "blockchainIdentifier": "tezos",
+//     "senderId": "2GvLDwaiiu1qx",
+//     "appMetadata": {
+//         "senderId": "2GvLDwaiiu1qx",
+//         "name": "Rarible",
+//         "blockchainIdentifier": "tezos"
+//     },
+//     "origin": {
+//         "type": "p2p",
+//         "id": "fef612074b86bf4d7bfb3b290f19d861b71d790e6597431435b78b65fe89218f"
+//     },
+//     "signingType": "micheline",
+//     "payload": "0501000000dd54657a6f73205369676e6564204d6573736167653a2072617269626c652e636f6d20323032322d30362d30385431363a30303a34312e3838375a20492077616e7420746f206c6f67696e206f6e2052617269626c6520617420323032322d30362d30385431363a30303a34312e3835335a2e204920616363657074207468652052617269626c65205465726d73206f6620536572766963652068747470733a2f2f7374617469632e72617269626c652e636f6d2f7465726d732e70646620616e64204920616d206174206c65617374203133207965617273206f6c642e",
+//     "sourceAddress": "tz1gWynSeB46Hb1j1QRq5SrsV6WLk3HZ7G5g"
+// }
 
 // {
 //     "type": "tezos_permission_request",
