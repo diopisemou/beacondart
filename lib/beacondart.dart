@@ -169,21 +169,28 @@ class BeaconWalletClient {
       'currentListenerId': currentListenerId,
     };
     dynamic? result = await _channel.invokeMethod('getPeersFunc', params);
+    var resultData = json.decode(result);
+    peers = resultData.map<P2pPeer>((dynamic d) => P2pPeer.fromMap(d)).toList();
     _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
+    result = peers;
     return result;
   }
 
-  Future<List<P2pPeer>> removePeer(Map<String, dynamic>? dApp, String? id) async {
+  Future<List<P2pPeer>> removePeer(String? id, Map<String, dynamic>? dApp) async {
     Map params = <String, dynamic>{
-      'peer': dApp,
+      'peer': dApp ?? null,
       'id': id ?? '',
     };
     dynamic? result = await _channel.invokeMethod('removePeerFunc', params);
+    peers.removeWhere((element) => element.id == id);
+    result = peers;
     return result;
   }
 
   Future<List<P2pPeer>> removePeers() async {
     dynamic? result = await _channel.invokeMethod('removePeersFunc');
+    peers.clear();
+    result = peers;
     return result;
   }
 
@@ -392,7 +399,7 @@ class BeaconWalletClient {
     } on PlatformException catch (e) {
       debugPrint(e.toString());
     } on Exception catch (e) {
-      debugPrint("Erreur onOperationRequest");
+      debugPrint("Erreur onOperationRequest $e");
       return false;
     }
   }

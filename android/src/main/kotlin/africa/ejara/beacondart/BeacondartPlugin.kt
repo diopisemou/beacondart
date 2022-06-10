@@ -133,7 +133,7 @@ class BeacondartPlugin :
             "getPeerFunc" -> {
                 getPeerFunc(call, result)
             }
-            "removePeeFunc" -> {
+            "removePeerFunc" -> {
                 removePeerFunc(call, result)
             }
             "removePeersFunc" -> {
@@ -193,10 +193,10 @@ class BeacondartPlugin :
     private fun getPeersFunc(@NonNull call: MethodCall, @NonNull result: Result) {
         try {
             val listPeers = viewModel.getPeers()
-            result.success(listPeers)
+            result.success(json.encodeToString(listPeers))
         } catch (e: Exception) {
-            result.error("exception", e.message, e.stackTrace)
-            // onError(e)
+            //result.error("exception", e.message, e.stackTrace)
+            onError(e)
         }
     }
 
@@ -693,7 +693,8 @@ class BeacondartPlugin :
                     //PermissionTezosResponse.from( request, BeacondartViewModel.tezosAccount("", "", request.network))
                 }
                 is OperationTezosRequest -> {
-                    OperationTezosResponse.from(request, "")
+                    var transactionHash = call.argument<String>("transactionHash")!!
+                    OperationTezosResponse.from(request, transactionHash)
                 }
                 is SignPayloadTezosRequest -> {
                     var requestPayload = call.argument<String>("requestPayload")!!
@@ -703,7 +704,8 @@ class BeacondartPlugin :
                     SignPayloadTezosResponse.from(request, requestSigningType!!, requestPayload)
                 }
                 is BroadcastTezosRequest -> {
-                    BroadcastTezosResponse.from(request, "")
+                    var transactionHash = call.argument<String>("transactionHash")!!
+                    BroadcastTezosResponse.from(request, transactionHash)
                 }
                 else -> {
                     ErrorBeaconResponse.from(request, BeaconError.Aborted)

@@ -134,8 +134,7 @@ class BeacondartViewModel : ViewModel() {
     fun getPeers() : List<Peer> ? {
         var listPeers : List<Peer>? = null
         viewModelScope.launch {
-            listPeers = beaconClient?.getPeers()!!
-
+            listPeers = if (beaconClient == null) emptyList() else beaconClient?.getPeers()
         }
         return listPeers;
     }
