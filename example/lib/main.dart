@@ -88,23 +88,6 @@ class _MyAppState extends State<MyApp> {
     bmw.stopListening();
   }
 
-  // void goToPermission(dynamic requestMap) {
-  //   Navigator.of(context).push(
-  //     MaterialPageRoute(
-  //       builder: (context) => PermissionPage(
-  //         dappAddress: bmw.getDappAddress() ?? '',
-  //         dappImageUrl: bmw.getDappImageUrl() ?? '',
-  //         dappName: bmw.getDappName() ?? '',
-  //         dappId: bmw.getDappName() ?? '',
-  //         dappBlockChain: requestMap['appMetadata']['blockchainIdentifier'],
-  //         dappNetwork: requestMap['network']['type'],
-  //         dappScope:
-  //             requestMap['scopes'].fold('initialValue', (previousValue, element) => previousValue + ' ' + element),
-  //       ),
-  //     ),
-  //   );
-  // }
-
   void goToPermission(requestMap) {
     if (requestMap.runtimeType == PermissionTezosRequest) {
       Navigator.of(context).push(

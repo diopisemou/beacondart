@@ -31,18 +31,51 @@ class BeaconWalletClient {
 
   static int nextCallbackId = 0;
 
+  bool beaconIsInit = false;
+
   factory BeaconWalletClient() {
     return _singleton;
   }
 
   BeaconWalletClient._internal();
 
-  Future<bool> init() async {
-    final bool beaconStarted = await _channel.invokeMethod("startBeaconFun");
-    return beaconStarted;
+  Future<bool> init(String appName, String publicKey, String address) async {
+    await _startBeacon(<String, String>{
+      'appName': appName,
+      'publicKey': publicKey,
+      'address': address,
+    });
+    // user completer to check beaconIsInit
+    Completer<bool> completer = Completer();
+
+    int tries = 1;
+    int n = 0;
+    int seconds = 4;
+
+    check(int tries) {
+      seconds = seconds ~/ tries;
+
+      if (seconds < 1) {
+        completer.completeError("Gave up waiting for wallet service after $tries tries in $n seconds. ...");
+      }
+
+      n += seconds;
+      print(beaconIsInit);
+      if (beaconIsInit) {
+        completer.complete(true);
+      } else {
+        Duration timeout = Duration(seconds: seconds);
+        Timer(timeout, () => check(++tries));
+      }
+    }
+
+    check(tries);
+
+    return completer.future;
   }
 
   Future<void> methodCallHandler(MethodCall call) async {
+    print('called');
     switch (call.method) {
       case 'callListener':
         try {
@@ -59,6 +92,31 @@ class BeaconWalletClient {
         break;
       default:
     }
+  }
+
+  _startBeacon(
+    Map<String, String> args,
+  ) async {
+    _channel.setMethodCallHandler(methodCallHandler);
+    int currentListenerId = nextCallbackId++;
+    callbacksById[currentListenerId] = (response) {
+      print(response);
+      beaconIsInit = true;
+    };
+    await _channel.invokeMethod(
+      "startBeaconFun",
+      {
+        "callBackId": currentListenerId,
+        ...args,
+      },
+    );
+    return () {
+      _channel.invokeMethod(
+        "cancelListening",
+        currentListenerId,
+      );
+      callbacksById.remove(currentListenerId);
+    };
   }
 
   Future<CancelListening> startListening(MultiUseCallback callback) async {
@@ -438,4 +496,24 @@ class BeaconWalletClient {
     final String? version = await _channel.invokeMethod('getPlatformVersion');
     return version;
   }
+
+//   Future<void Function()> callBackRequest(
+//     String callBack,
+//     void Function(dynamic response) responder,
+//   ) async {
+//     _channel.setMethodCallHandler(methodCallHandler);
+//     int currentListenerId = nextCallbackId++;
+//     callbacksById[currentListenerId] = responder;
+//     await _channel.invokeMethod(
+//       callBack,
+//       currentListenerId,
+//     );
+//     return () {
+//       _channel.invokeMethod(
+//         "cancelListening",
+//         currentListenerId,
+//       );
+//       callbacksById.remove(currentListenerId);
+//     };
+//   }
 }
