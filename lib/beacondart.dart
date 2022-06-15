@@ -201,9 +201,6 @@ class BeaconWalletClient {
       callbacksById[currentListenerId] = responder;
       Map params = <String, dynamic>{
         'currentListenerId': currentListenerId,
-        // 'accountAddress': 'tz1N6Dqo9PuWga38GjdfPXg1aSowbymWinGK',
-        // 'accountPubKey': 'edpkvR6cRnbyA2gsLvMnjwnJ7rH3vUpN9ULcdA6mtJZrkVEeiN6EVe',
-        // 'isBase64': false,
         'accountAddress': accountAddress,
         'accountPubKey': accountPubKey,
         'isBase64': isBase64,

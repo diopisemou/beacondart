@@ -39,10 +39,12 @@ import it.airgap.beaconsdk.core.data.BeaconError
 import it.airgap.beaconsdk.core.data.SigningType
 import it.airgap.beaconsdk.core.internal.utils.logInfo
 import it.airgap.beaconsdk.core.message.BeaconRequest
+import it.airgap.beaconsdk.core.message.BeaconResponse
 import it.airgap.beaconsdk.core.message.ErrorBeaconResponse
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.lang.IllegalArgumentException
 import kotlin.reflect.KMutableProperty
 
 
@@ -606,7 +608,8 @@ class BeacondartPlugin :
         eventChannel!!.setStreamHandler(null)
         // channel = MethodChannel( BinaryMessenger(), "")
         pluginBinding = null
-        channel = MethodChannel(pluginBinding!!.binaryMessenger, "")
+        // channel = null
+        // channel = MethodChannel(pluginBinding!!.binaryMessenger, "")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             applicationContext!!.unregisterActivityLifecycleCallbacks(observer)
         }
@@ -631,14 +634,28 @@ class BeacondartPlugin :
 
     //private fun onAcceptBeaconRequest(request: BeaconRequest, accountPubKey: String, accountAddress: String, isBase64String: Boolean) {
     private fun onAcceptBeaconRequest(request: BeaconRequest, @NonNull call: MethodCall) {
-        val jsonReq = json.encodeToString(request.toJson(json))
+        //val jsonReq = json.encodeToString(request.toJson(json))
 
-
+        if(call == null || request == null)
+        {
+            viewModel.viewModelScope.launch {
+                try {
+                    viewModel.beaconClient?.respond(ErrorBeaconResponse.from(request, BeaconError.Aborted))
+                    beaconOperationStream?.success(json.encodeToString(ErrorBeaconResponse.from(request, BeaconError.Aborted).toJson(json)))
+                } catch (e: IllegalArgumentException) {
+                    //pendingResult?.error("error ", "Request not Found", e)
+                }
+                catch (e: Exception) {
+                    // pendingResult?.error("error ", "Stream error", e)
+                    onError(e)
+                }
+            }
+        }
         val response =
             when (request) {
                 is PermissionSubstrateRequest -> {
                     var accountPubKey = ""
-                    var accountAddress = call.argument<String>("accountAddress")!!
+                    var accountAddress = call?.argument<String>("accountAddress")!!
                     PermissionSubstrateResponse.from(
                         request,
                         //request.networks.map { BeacondartViewModel.exampleSubstrateAccount(it) }
@@ -650,36 +667,20 @@ class BeacondartPlugin :
                             )
                         }
                     )
-//          is PermissionTezosRequest ->
-//              PermissionTezosResponse.from( request, BeacondartViewModel.exampleTezosAccount(request.network))
                 }
                 is PermissionTezosRequest -> {
                     var accountPubKey = ""
-                    var accountAddress = call.argument<String>("accountAddress")!!
+                    var accountAddress = call?.argument<String>("accountAddress")!!
 
-                    if (call.argument<Boolean>("isBase64")!!) {
-                        accountPubKey = String(
-                            Base64.decode(
-                                call.argument<String>("accountPubKey"),
-                                Base64.DEFAULT
-                            ), Charsets.UTF_8
-                        )
+                    if (call?.argument<Boolean>("isBase64")!!) {
                         accountPubKey = Base58().encode(
                             Base64.decode(
-                                call.argument<String>("accountPubKey")!!,
+                                call?.argument<String>("accountPubKey")!!,
                                 Base64.DEFAULT
-                            )
-                        ).toString()
-                        accountPubKey = Base58().decode(
-                            String(
-                                Base64.decode(
-                                    call.argument<String>("accountPubKey")!!,
-                                    Base64.DEFAULT
-                                ), Charsets.UTF_8
                             )
                         ).toString()
                     } else {
-                        accountPubKey = call.argument<String>("accountPubKey")!!
+                        accountPubKey = call?.argument<String>("accountPubKey")!!
                     }
                     PermissionTezosResponse.from(
                         request,
@@ -690,21 +691,22 @@ class BeacondartPlugin :
                         ),
                         request.scopes
                     )
-                    //PermissionTezosResponse.from( request, BeacondartViewModel.tezosAccount("", "", request.network))
+
                 }
                 is OperationTezosRequest -> {
-                    var transactionHash = call.argument<String>("transactionHash")!!
+                    var transactionHash = call?.argument<String>("transactionHash")!!
                     OperationTezosResponse.from(request, transactionHash)
                 }
                 is SignPayloadTezosRequest -> {
-                    var requestPayload = call.argument<String>("requestPayload")!!
-                    var requestSigningTypeValue = call.argument<String>("requestSigningType")!!
+
+                    var requestPayload = call?.argument<String>("requestPayload")!!
+                    var requestSigningTypeValue = call?.argument<String>("requestSigningType")!!
                     val requestSigningType = SigningType.values()
                         .firstOrNull { it.name.lowercase() == requestSigningTypeValue }
                     SignPayloadTezosResponse.from(request, requestSigningType!!, requestPayload)
                 }
                 is BroadcastTezosRequest -> {
-                    var transactionHash = call.argument<String>("transactionHash")!!
+                    var transactionHash = call?.argument<String>("transactionHash")!!
                     BroadcastTezosResponse.from(request, transactionHash)
                 }
                 else -> {
@@ -712,20 +714,42 @@ class BeacondartPlugin :
                 }
             }
 
-        logInfo("beaconAcceptRequest", jsonReq)
-        logInfo("beaconAcceptResponse", response.toJson().toString())
+//        logInfo("beaconAcceptRequest", jsonReq)
+//        logInfo("beaconAcceptResponse", response.toJson().toString())
 
-        // this.lifecycleScope.launch {
         viewModel.viewModelScope.launch {
             try {
+
                 viewModel.beaconClient?.respond(response)
                 beaconOperationStream?.success(json.encodeToString(response.toJson(json)))
-            } catch (e: Exception) {
+            }
+            catch (e: IllegalStateException) {
+                //pendingResult?.error("error ", "Request not Found", e)
+                onError(e)
+            }
+            catch (e: IllegalArgumentException) {
+                //pendingResult?.error("error ", "Request not Found", e)
+            }
+            catch (e: Exception) {
                 // pendingResult?.error("error ", "Stream error", e)
                 onError(e)
             }
         }
     }
+
+//    private suspend fun makeResponse(response: BeaconResponse) {
+//        viewModel.viewModelScope.launch {
+//            try {
+//                var resultData = viewModel.beaconClient?.respond(response)
+//                beaconOperationStream?.success(json.encodeToString(response.toJson(json)))
+//            } catch (e: IllegalArgumentException) {
+//                //pendingResult?.error("error ", "Request not Found", e)
+//            } catch (e: Exception) {
+//                // pendingResult?.error("error ", "Stream error", e)
+//                onError(e)
+//            }
+//        }
+//    }
 
     private fun onAcceptOperationRequest(request: BeaconRequest) {
         val jsonReq = json.encodeToString(request.toJson(json))

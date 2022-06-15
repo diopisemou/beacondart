@@ -149,6 +149,7 @@ class BeacondartViewModel : ViewModel() {
     }
 
     fun removePeers() {
+        awaitingRequest = null
         viewModelScope.launch {
             beaconClient?.removeAllPeers()
             checkForPeers()
