@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:html';
 import 'package:beacondart/p2ppeer.dart';
 import 'package:beacondart/tezos_reponse.dart';
 import 'package:beacondart/tezos_request.dart';
@@ -173,17 +174,16 @@ class BeaconWalletClient {
 
   addPeer(Map<String, dynamic> dApp, MultiUseCallback responder) async {
     try {
-      _channel.setMethodCallHandler(methodCallHandler);
-      int? currentListenerId;
-      if (responder != null) {
-        currentListenerId = nextCallbackId++;
-        callbacksById[currentListenerId] = responder;
-      }
       Map params = <String, dynamic>{
         ...dApp,
-        'currentListenerId': currentListenerId,
       };
-      await _channel.invokeMethod("addPeerFunc", params);
+
+      void Function() cancel = await callBackRequest(
+        "addPeerFunc",
+        params,
+        responder,
+      );
+
       peers.add(P2pPeer.fromMap(dApp));
 
       _getDappId = dApp['id'];
@@ -191,10 +191,7 @@ class BeaconWalletClient {
       _getDappImageUrl = dApp['icon'];
       _getDappAddress = dApp['publicKey'];
 
-      return () {
-        _channel.invokeMethod("cancelListeningFunc", params);
-        callbacksById.remove(currentListenerId);
-      };
+      return cancel;
     } on PlatformException catch (e) {
       debugPrint(e.toString());
     } on Exception catch (e) {
@@ -203,21 +200,33 @@ class BeaconWalletClient {
   }
 
   getPeer(String? id, MultiUseCallback responder) async {
-    _channel.setMethodCallHandler(methodCallHandler);
-    int currentListenerId = nextCallbackId++;
-    callbacksById[currentListenerId] = responder;
     Map params = <String, dynamic>{
       'id': id ?? '',
-      'currentListenerId': currentListenerId,
     };
-
-    await _channel.invokeMethod('getPeerFunc');
-
-    return () {
-      _channel.invokeMethod("cancelListeningFunc", params);
-      callbacksById.remove(currentListenerId);
-    };
+    void Function() cancel = await callBackRequest(
+      "getPeerFunc",
+      params,
+      responder,
+    );
+    return cancel;
   }
+
+  //  getPeer(String? id, MultiUseCallback responder) async {
+  //   _channel.setMethodCallHandler(methodCallHandler);
+  //   int currentListenerId = nextCallbackId++;
+  //   callbacksById[currentListenerId] = responder;
+  //   Map params = <String, dynamic>{
+  //     'id': id ?? '',
+  //     'currentListenerId': currentListenerId,
+  //   };
+
+  //   await _channel.invokeMethod('getPeerFunc');
+
+  //   return () {
+  //     _channel.invokeMethod("cancelListeningFunc", params);
+  //     callbacksById.remove(currentListenerId);
+  //   };
+  // }
 
   Future<List<P2pPeer>> getPeers(MultiUseCallback responder) async {
     _channel.setMethodCallHandler(methodCallHandler);
@@ -254,20 +263,17 @@ class BeaconWalletClient {
 
   onConfirmConnectToDApp(String accountAddress, String accountPubKey, bool isBase64, MultiUseCallback responder) async {
     try {
-      _channel.setMethodCallHandler(methodCallHandler);
-      int currentListenerId = nextCallbackId++;
-      callbacksById[currentListenerId] = responder;
       Map params = <String, dynamic>{
-        'currentListenerId': currentListenerId,
         'accountAddress': accountAddress,
         'accountPubKey': accountPubKey,
         'isBase64': isBase64,
       };
-      var result = await _channel.invokeMethod('onConfirmConnectToDAppFunc', params);
-      return () {
-        _channel.invokeMethod("cancelListeningFunc", params);
-        callbacksById.remove(currentListenerId);
-      };
+      void Function() cancel = await callBackRequest(
+        "onConfirmConnectToDAppFunc",
+        params,
+        responder,
+      );
+      return cancel;
     } on PlatformException catch (e) {
       debugPrint(e.toString());
     } on Exception catch (e) {
@@ -278,17 +284,12 @@ class BeaconWalletClient {
 
   onRejectConnectToDApp(MultiUseCallback responder) async {
     try {
-      _channel.setMethodCallHandler(methodCallHandler);
-      int currentListenerId = nextCallbackId++;
-      callbacksById[currentListenerId] = responder;
-      Map params = <String, dynamic>{
-        'currentListenerId': currentListenerId,
-      };
-      await _channel.invokeMethod('onRejectConnectToDAppFunc', params);
-      return () {
-        _channel.invokeMethod("cancelListeningFunc", params);
-        callbacksById.remove(currentListenerId);
-      };
+      void Function() cancel = await callBackRequest(
+        "onRejectConnectToDAppFunc",
+        null,
+        responder,
+      );
+      return cancel;
     } on PlatformException catch (e) {
       debugPrint(e.toString());
     } on Exception catch (e) {
@@ -299,21 +300,12 @@ class BeaconWalletClient {
 
   Future<CancelListening> onConnectToDApp(MultiUseCallback responder) async {
     try {
-      _channel.setMethodCallHandler(methodCallHandler);
-      int? currentListenerId;
-      if (responder != null) {
-        currentListenerId = nextCallbackId++;
-        callbacksById[currentListenerId] = responder;
-      }
-      Map params = <String, dynamic>{
-        'currentListenerId': currentListenerId,
-      };
-      await _channel.invokeMethod("onConnectToDAppFunc", params);
-      //debugPrint(result.toString());
-      return () {
-        _channel.invokeMethod("cancelListeningFunc", params);
-        callbacksById.remove(currentListenerId);
-      };
+      void Function() cancel = await callBackRequest(
+        "onConnectToDAppFunc",
+        null,
+        responder,
+      );
+      return cancel;
     } on PlatformException catch (e) {
       debugPrint(e.toString());
       return () {};
@@ -325,19 +317,16 @@ class BeaconWalletClient {
 
   onDisconnectToDApp(String? id, MultiUseCallback responder) async {
     try {
-      _channel.setMethodCallHandler(methodCallHandler);
-      int currentListenerId = nextCallbackId++;
-      callbacksById[currentListenerId] = responder;
       Map params = <String, dynamic>{
         'id': id ?? '',
-        'currentListenerId': currentListenerId,
       };
 
-      var result = await _channel.invokeMethod('onDisconnectToDAppFunc', params);
-      return () {
-        _channel.invokeMethod("cancelListeningFunc", params);
-        callbacksById.remove(currentListenerId);
-      };
+      void Function() cancel = await callBackRequest(
+        "onDisconnectToDAppFunc",
+        params,
+        responder,
+      );
+      return cancel;
     } on PlatformException catch (e) {
       debugPrint(e.toString());
     } on Exception catch (e) {
@@ -348,19 +337,12 @@ class BeaconWalletClient {
 
   onSubscribeToRequest(MultiUseCallback responder) async {
     try {
-      _channel.setMethodCallHandler(methodCallHandler);
-      int currentListenerId = nextCallbackId++;
-      callbacksById[currentListenerId] = responder;
-      Map params = <String, dynamic>{
-        'currentListenerId': currentListenerId,
-      };
-
-      await _channel.invokeMethod('onSubscribeToRequestFunc', params);
-      //_onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
-      return () {
-        _channel.invokeMethod("cancelListeningFunc", params);
-        callbacksById.remove(currentListenerId);
-      };
+      void Function() cancel = await callBackRequest(
+        "onSubscribeToRequestFunc",
+        null,
+        responder,
+      );
+      return cancel;
     } on PlatformException catch (e) {
       debugPrint(e.toString());
     } on Exception catch (e) {
@@ -371,18 +353,15 @@ class BeaconWalletClient {
 
   onConfirmOperationRequest(Map reqArgs, MultiUseCallback responder) async {
     try {
-      _channel.setMethodCallHandler(methodCallHandler);
-      int currentListenerId = nextCallbackId++;
-      callbacksById[currentListenerId] = responder;
       Map params = <String, dynamic>{
-        'currentListenerId': currentListenerId,
         ...reqArgs,
       };
-      var result = await _channel.invokeMethod('onConfirmOperationRequestFunc', params);
-      return () {
-        _channel.invokeMethod("cancelListeningFunc", params);
-        callbacksById.remove(currentListenerId);
-      };
+      void Function() cancel = await callBackRequest(
+        "onConfirmOperationRequestFunc",
+        params,
+        responder,
+      );
+      return cancel;
     } on PlatformException catch (e) {
       debugPrint(e.toString());
     } on Exception catch (e) {
@@ -424,12 +403,6 @@ class BeaconWalletClient {
 
   onPermissionRequest(MultiUseCallback responder) async {
     try {
-      _channel.setMethodCallHandler(methodCallHandler);
-      int currentListenerId = nextCallbackId++;
-      callbacksById[currentListenerId] = responder;
-      Map params = <String, dynamic>{
-        'currentListenerId': currentListenerId,
-      };
       _onOperationReceiver ??= _eventChannel.receiveBroadcastStream();
       _onOperationReceiver?.listen((event) {
         var eventMap = json.decode(event);
@@ -447,10 +420,6 @@ class BeaconWalletClient {
           responder!(SignPayloadTezosRequest.fromJson(event));
         }
       });
-      return () {
-        _channel.invokeMethod("cancelListeningFunc", params);
-        callbacksById.remove(currentListenerId);
-      };
     } on PlatformException catch (e) {
       debugPrint(e.toString());
     } on Exception catch (e) {
@@ -497,23 +466,49 @@ class BeaconWalletClient {
     return version;
   }
 
-//   Future<void Function()> callBackRequest(
-//     String callBack,
-//     void Function(dynamic response) responder,
-//   ) async {
-//     _channel.setMethodCallHandler(methodCallHandler);
-//     int currentListenerId = nextCallbackId++;
-//     callbacksById[currentListenerId] = responder;
-//     await _channel.invokeMethod(
-//       callBack,
-//       currentListenerId,
-//     );
-//     return () {
-//       _channel.invokeMethod(
-//         "cancelListening",
-//         currentListenerId,
-//       );
-//       callbacksById.remove(currentListenerId);
-//     };
-//   }
+  Future<void Function()> onRequestBeacon(
+    void Function(dynamic response) responder,
+  ) async {
+    void Function() cancel = await callBackRequest(
+      "onBeaconRequest",
+      null,
+      responder,
+    );
+    return cancel;
+  }
+
+  Future<void Function()> callBackRequest(
+    String callBack,
+    Map? reqArgs,
+    MultiUseCallback responder,
+    //void Function(dynamic response) responder,
+  ) async {
+    // _channel.setMethodCallHandler(methodCallHandler);
+    // int currentListenerId = nextCallbackId++;
+    // callbacksById[currentListenerId] = responder;
+
+    _channel.setMethodCallHandler(methodCallHandler);
+    int? currentListenerId;
+    if (responder != null) {
+      currentListenerId = nextCallbackId++;
+      callbacksById[currentListenerId] = responder;
+    }
+
+    Map params = <String, dynamic>{
+      'currentListenerId': currentListenerId,
+      ...?reqArgs,
+    };
+    await _channel.invokeMethod(
+      callBack,
+      params,
+    );
+    return () {
+      _channel.invokeMethod(
+        "cancelListeningFunc",
+        params,
+        // currentListenerId,
+      );
+      callbacksById.remove(currentListenerId);
+    };
+  }
 }

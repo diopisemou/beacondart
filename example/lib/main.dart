@@ -73,7 +73,6 @@ class _MyAppState extends State<MyApp> {
       _platformVersion = platformVersion;
     });
     bmw.onInit();
-
     bmw.onPermissionRequest((dynamic barcode) {
       goToPermission(barcode);
     });

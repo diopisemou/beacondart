@@ -18,18 +18,18 @@ public class SwiftBeacondartPlugin: NSObject, FlutterPlugin {
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     
     switch call.method {
-        case "addPeer":
+        case "addPeerFunc":
             let peerInfo = call.arguments as! [String: String]
             addPeer(peerInfo: peerInfo)
             result(true)
-        case "removePeer":
+        case "removePeerFunc":
             let peerPublicKey = call.arguments as! String
             removePeer(peerPublicKey: peerPublicKey)
             result(true)
-        case "removePeers":
+        case "removePeersFunc":
             removePeers()
             result(true)
-        case "getPeers":
+        case "getPeersFunc":
             let callBackId = call.arguments as! Int
             getPeers{ result in
                 
@@ -42,7 +42,7 @@ public class SwiftBeacondartPlugin: NSObject, FlutterPlugin {
                 }
             }
             result(nil)
-        case "onBeaconRequest":
+        case "onBeaconRequestFunc":
             let callBackId = call.arguments as! Int
             onBeaconRequest { result in
                 
@@ -55,11 +55,11 @@ public class SwiftBeacondartPlugin: NSObject, FlutterPlugin {
                 }
             }
             result(true)
-        case "cancelListening": // stop listening for beacon requests
+        case "cancelListeningFunc": // stop listening for beacon requests
             let callBackId = call.arguments as! Int
             cancelListening(callBackId: callBackId)
             result(true)
-        case "startBeacon":
+        case "startBeaconFunc":
             let args = call.arguments as! [String: Any]
             print(args)
             startBeacon(appName: args["appName"] as! String, publicKey: args["publicKey"] as! String, address: args["address"] as! String, completion: {res in
