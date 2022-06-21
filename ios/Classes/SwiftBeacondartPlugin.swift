@@ -225,6 +225,40 @@ public class SwiftBeacondartPlugin: NSObject, FlutterPlugin {
         
     }
     
+    func onAcceptBeaconRequest(from request: BeaconRequest, _ call: FlutterMethodCall, completion: @escaping (Result<(), Error>) -> ()) {
+        
+       
+        do {
+            Beacon.WalletClient.create(
+                with: .init(
+                    name: appName,
+                    blockchains: [Tezos.factory],
+                    connections: [try Transport.P2P.Matrix.connection()]
+                )
+            ) { result in
+                print(["createBeaconWallet",result])
+                switch request {
+                case let .permission(content):
+                    
+                    let account = try tezosAccount(network: content.network, publicKey: <#T##String#>, address: <#T##String#>)
+                    return .permission(PermissionTezosResponse(from: content, account: account))
+                    
+                case let .operation(error):
+                    let response = OperationTezosResponse(
+                        from: operationRequest, //: OperationTezosRequest
+                        transactionHash: transactionHash
+                    )
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        } catch {
+            completion(.failure(error))
+        }
+        
+        
+    }
+    
     func cancelListening(callBackId: Int) {
         callbacksById.removeValue(forKey: callBackId)
     }

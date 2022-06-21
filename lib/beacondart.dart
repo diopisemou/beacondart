@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:html';
 import 'package:beacondart/p2ppeer.dart';
 import 'package:beacondart/tezos_reponse.dart';
 import 'package:beacondart/tezos_request.dart';

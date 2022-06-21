@@ -56,7 +56,6 @@ android {
 }
 
 dependencies {
-    def beacon_version = "3.1.0"
     def lifecycle_version = "2.5.0-beta01"
 
     implementation fileTree(dir: "libs", include: ["*.jar"])
